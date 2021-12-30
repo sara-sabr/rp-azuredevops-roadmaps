@@ -1,0 +1,18 @@
+{
+  "contributions": [
+    {
+      "id": "esdc.it.rp-project-roadmap-hub",
+      "type": "ms.vss-web.hub",
+      "targets": ["ms.vss-work-web.work-hub-group"],
+      "properties": {
+        "name": "Project Roadmap",
+        "uri": "dist/ProjectRoadmap/ProjectRoadmap.html",
+        "order": 102,
+        "icon": {
+          "dark": "dist/static/img/roadmap.png",
+          "light": "dist/static/img/roadmap.png"
+        }
+      }
+    }
+  ]
+}
