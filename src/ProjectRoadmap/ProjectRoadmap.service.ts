@@ -1,9 +1,15 @@
 import {
   TreeStructureGroup,
-  WorkItemClassificationNode
+  WorkItemClassificationNode,
 } from "azure-devops-extension-api/WorkItemTracking";
 
-import { CommonRepositories, ProjectService, SearchRepository, SearchResultEntity, TreeNode } from "@esdc-it-rp/azuredevops-common";
+import {
+  CommonRepositories,
+  ProjectService,
+  SearchRepository,
+  SearchResultEntity,
+  TreeNode,
+} from "@esdc-it-rp/azuredevops-common";
 import { ProjectRoadmapConfig } from "./ProjectRoadmap.config";
 import { ProjectRoadmapTaskEntity } from "./ProjectRoadmapTask.entity";
 
@@ -19,14 +25,12 @@ export class ProjectRoadmapService {
   static async getRoadmaps(
     asOf?: Date
   ): Promise<SearchResultEntity<ProjectRoadmapTaskEntity, number>> {
-    const roadmaps: SearchResultEntity<
-      ProjectRoadmapTaskEntity,
-      number
-    > = await SearchRepository.executeQuery(
-      ProjectRoadmapConfig.getQueryForLatest(),
-      ProjectRoadmapTaskEntity,
-      asOf
-    );
+    const roadmaps: SearchResultEntity<ProjectRoadmapTaskEntity, number> =
+      await SearchRepository.executeQuery(
+        ProjectRoadmapConfig.getQueryForLatest(),
+        ProjectRoadmapTaskEntity,
+        asOf
+      );
 
     return roadmaps;
   }
@@ -36,12 +40,13 @@ export class ProjectRoadmapService {
    */
   static async getAreaPathsForProject(): Promise<WorkItemClassificationNode[]> {
     const projectName = await ProjectService.getProjectName();
-    const classificatioNodes = await CommonRepositories.WIT_API_CLIENT.getClassificationNode(
-      projectName,
-      TreeStructureGroup.Areas,
-      undefined,
-      1
-    );
+    const classificatioNodes =
+      await CommonRepositories.WIT_API_CLIENT.getClassificationNode(
+        projectName,
+        TreeStructureGroup.Areas,
+        undefined,
+        1
+      );
     return classificatioNodes.children;
   }
 
@@ -117,7 +122,7 @@ export class ProjectRoadmapService {
             calculatedProgress = 100;
           }
         } else {
-          currentNode.children.forEach(child => {
+          currentNode.children.forEach((child) => {
             if (child.data) {
               // If no progress set, set to 0
               calculatedProgress += child.data.progress

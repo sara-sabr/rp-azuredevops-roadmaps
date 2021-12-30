@@ -5,5 +5,5 @@ export enum DisplayInterval {
   Sprint,
   Month,
   Quarter,
-  Year
+  Year,
 }

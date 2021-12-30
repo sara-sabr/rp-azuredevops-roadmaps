@@ -24,13 +24,13 @@ export class ProjectRoadmapCommandMenu {
    */
   private printButton: IHeaderCommandBarItem = {
     iconProps: {
-      iconName: "Print"
+      iconName: "Print",
     },
     id: "itrp-pm-roadmap-header-print",
     important: true,
     text: "Print",
     disabled: true,
-    onActivate: function() {}
+    onActivate: function () {},
   };
 
   /**
@@ -38,11 +38,11 @@ export class ProjectRoadmapCommandMenu {
    */
   private refreshButton: IHeaderCommandBarItem = {
     iconProps: {
-      iconName: "Refresh"
+      iconName: "Refresh",
     },
     id: "itrp-pm-roadmap-header-refresh",
     text: "Refresh",
-    disabled: true
+    disabled: true,
   };
 
   /**
@@ -54,38 +54,38 @@ export class ProjectRoadmapCommandMenu {
     {
       id: ProjectRoadmapCommandMenu.AS_OF_PREFIX_ID + "now",
       text: "Now",
-      onActivate: function() {},
+      onActivate: function () {},
       data: "Now",
-      readonly: true
+      readonly: true,
     },
     {
       id: ProjectRoadmapCommandMenu.AS_OF_PREFIX_ID + "beginningOfMonth",
       text: "Beginning of the Month",
-      onActivate: function() {},
+      onActivate: function () {},
       data: "Month",
-      readonly: true
+      readonly: true,
     },
     {
       id: ProjectRoadmapCommandMenu.AS_OF_PREFIX_ID + "beginningOfQuarter",
       text: "Beginning of the Quarter",
-      onActivate: function() {},
+      onActivate: function () {},
       data: "Quarter",
-      readonly: true
+      readonly: true,
     },
     {
       id: ProjectRoadmapCommandMenu.AS_OF_PREFIX_ID + "beginningOfFYYear",
       text: "Beginning of the Year",
-      onActivate: function() {},
+      onActivate: function () {},
       data: "Year",
-      readonly: true
+      readonly: true,
     },
     {
       id: ProjectRoadmapCommandMenu.AS_OF_PREFIX_ID + "custom",
       text: "Custom",
-      onActivate: function() {},
+      onActivate: function () {},
       data: "Custom",
-      readonly: true
-    }
+      readonly: true,
+    },
   ];
 
   /**
@@ -97,8 +97,8 @@ export class ProjectRoadmapCommandMenu {
     disabled: false,
     subMenuProps: {
       items: this.asOfOptionItems,
-      id: "itrp-pm-roadmap-header-asof.submenu"
-    }
+      id: "itrp-pm-roadmap-header-asof.submenu",
+    },
   };
 
   /**
@@ -107,7 +107,7 @@ export class ProjectRoadmapCommandMenu {
   private intervalButton: IHeaderCommandBarItem = {
     id: "itrp-pm-roadmap-header-interval",
     text: "Interval",
-    disabled: false
+    disabled: false,
   };
 
   /** Used to trigger update. */
@@ -115,7 +115,7 @@ export class ProjectRoadmapCommandMenu {
     this.asOfButton,
     this.intervalButton,
     this.printButton,
-    this.refreshButton
+    this.refreshButton,
   ]);
 
   constructor() {
@@ -125,16 +125,16 @@ export class ProjectRoadmapCommandMenu {
         this.intervalOptionItems.push({
           id: ProjectRoadmapCommandMenu.INTERVAL_PREFIX_ID + v,
           text: v,
-          onActivate: function() {},
+          onActivate: function () {},
           data: DisplayInterval[v],
-          readonly: true
+          readonly: true,
         });
       }
     }
 
     this.intervalButton.subMenuProps = {
       items: this.intervalOptionItems,
-      id: "itrp-pm-roadmap-header-interval.submenu"
+      id: "itrp-pm-roadmap-header-interval.submenu",
     };
   }
 
@@ -147,7 +147,7 @@ export class ProjectRoadmapCommandMenu {
     this.intervalButton.text =
       "Interval: " + DisplayInterval[currentPage.ganttConfig.unit];
 
-    this.intervalOptionItems.forEach(item => {
+    this.intervalOptionItems.forEach((item) => {
       if (currentPage.ganttConfig.unit === item.data) {
         item.checked = true;
       } else {
@@ -170,7 +170,7 @@ export class ProjectRoadmapCommandMenu {
       event?: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
     ) => boolean | void
   ): void {
-    this.intervalOptionItems.forEach(button => {
+    this.intervalOptionItems.forEach((button) => {
       button.onActivate = event;
     });
   }

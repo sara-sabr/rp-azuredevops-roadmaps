@@ -10,7 +10,7 @@ import {
   HeaderTitle,
   HeaderTitleArea,
   HeaderTitleRow,
-  TitleSize
+  TitleSize,
 } from "azure-devops-ui/Header";
 import { Observer } from "azure-devops-ui/Observer";
 
@@ -19,7 +19,7 @@ import { FilterBar } from "azure-devops-ui/FilterBar";
 import {
   Filter,
   FILTER_CHANGE_EVENT,
-  FilterOperatorType
+  FilterOperatorType,
 } from "azure-devops-ui/Utilities/Filter";
 import { Page } from "azure-devops-ui/Page";
 import { ProjectRoadmapCommandMenu } from "./ProjectRoadmapCommandMenu.ui";
@@ -90,9 +90,9 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
         unit: DisplayInterval.Month,
         data: {
           tasks: [],
-          links: []
-        }
-      }
+          links: [],
+        },
+      },
     };
     this.viewChangesObserver = new ObservableValue(this.pageData.ganttConfig);
     this.commandButtons = new ProjectRoadmapCommandMenu();
@@ -120,7 +120,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
 
     that.filter.setFilterItemState("areaPath", {
       value: [],
-      operator: FilterOperatorType.and
+      operator: FilterOperatorType.and,
     });
     that.filter.subscribe(() => {
       this.currentFilterState.value = JSON.stringify(
@@ -138,21 +138,20 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    */
   private filterRoadmap() {
     // Area Filtering
-    const areaPaths: string[] = this.filter.getFilterItemState("areaPath")
-      ?.value;
+    const areaPaths: string[] =
+      this.filter.getFilterItemState("areaPath")?.value;
 
     // Now hide the levels.
-    const visibleLevel: string = this.filter.getFilterItemState(
-      "displayGranularity"
-    )?.value;
+    const visibleLevel: string =
+      this.filter.getFilterItemState("displayGranularity")?.value;
 
     if (areaPaths.length === 0) {
-      this.pageData.roadmap.forEach(entry => {
+      this.pageData.roadmap.forEach((entry) => {
         entry.hide = false;
       });
     } else {
       let topArea: string;
-      this.pageData.roadmap.forEach(entry => {
+      this.pageData.roadmap.forEach((entry) => {
         topArea = ProjectRoadmapService.getTopLevelAreaPath(entry.areaPath);
         entry.hide = areaPaths.indexOf(topArea) === -1;
       });
@@ -218,7 +217,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private async populateAreaPath(): Promise<void> {
     const areaPaths = await ProjectRoadmapService.getAreaPathsForProject();
     let pathCleaned: string;
-    areaPaths.forEach(area => {
+    areaPaths.forEach((area) => {
       // Fix the area path as this call generates /<project>/Area/<area path>.
       // We want <project>/<area path>
       pathCleaned = area.path.replace("\\Area\\", "\\");
@@ -227,7 +226,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
       this.areaPathList.push({
         id: "itrp-pm-roadmap.areapath." + area.name,
         data: pathCleaned,
-        text: area.name
+        text: area.name,
       });
     });
   }
@@ -248,7 +247,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private populateGantt(): void {
     const tasks: GanttTask[] = [];
 
-    this.pageData.roadmap.forEach(azureItem => {
+    this.pageData.roadmap.forEach((azureItem) => {
       if (!azureItem.hide) {
         tasks.push(GanttTask.convert(azureItem));
       }
@@ -284,45 +283,53 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
           </Observer>
         </CustomHeader>
         <div className="page-content-left page-content-right page-content-top">
-          {/** Print this on no data. */
-          this.state.roadmap.length === 0 && (
-            <div className="flex-row v-align-middle justify-center full-size">
-              <Spinner size={SpinnerSize.large} label="Please wait ..." />
-            </div>
-          )}
-          {/**
-           * Print on data.
-           */
-          this.state.roadmap.length > 0 && (
-            <div className="flex-grow">
-              <FilterBar filter={this.filter}>
-                <DropdownFilterBarItem
-                  filterItemKey="areaPath"
-                  filter={this.filter}
-                  items={this.areaPathList}
-                  selection={this.filterAreaPath}
-                  placeholder="Area Path"
-                />
-              </FilterBar>
-              {/**
-               * Show the gantt chart if we have data.
-               */
-              this.pageData.ganttConfig.data.tasks.length > 0 && (
-                <Gantt config={this.pageData.ganttConfig} />
-              )}
-              {/**
-               * Show no results if a filter or search results has no data.
-               */
-              this.pageData.ganttConfig.data.tasks.length === 0 && (
-                <ZeroData
-                  className="flex-row v-align-middle justify-center full-size"
-                  primaryText="No data."
-                  imageAltText="No Data Image"
-                  imagePath="https://cdn.vsassets.io/v/M183_20210324.1/_content/Illustrations/general-no-results-found.svg"
-                />
-              )}
-            </div>
-          )}
+          {
+            /** Print this on no data. */
+            this.state.roadmap.length === 0 && (
+              <div className="flex-row v-align-middle justify-center full-size">
+                <Spinner size={SpinnerSize.large} label="Please wait ..." />
+              </div>
+            )
+          }
+          {
+            /**
+             * Print on data.
+             */
+            this.state.roadmap.length > 0 && (
+              <div className="flex-grow">
+                <FilterBar filter={this.filter}>
+                  <DropdownFilterBarItem
+                    filterItemKey="areaPath"
+                    filter={this.filter}
+                    items={this.areaPathList}
+                    selection={this.filterAreaPath}
+                    placeholder="Area Path"
+                  />
+                </FilterBar>
+                {
+                  /**
+                   * Show the gantt chart if we have data.
+                   */
+                  this.pageData.ganttConfig.data.tasks.length > 0 && (
+                    <Gantt config={this.pageData.ganttConfig} />
+                  )
+                }
+                {
+                  /**
+                   * Show no results if a filter or search results has no data.
+                   */
+                  this.pageData.ganttConfig.data.tasks.length === 0 && (
+                    <ZeroData
+                      className="flex-row v-align-middle justify-center full-size"
+                      primaryText="No data."
+                      imageAltText="No Data Image"
+                      imagePath="https://cdn.vsassets.io/v/M183_20210324.1/_content/Illustrations/general-no-results-found.svg"
+                    />
+                  )
+                }
+              </div>
+            )
+          }
         </div>
       </Page>
     );

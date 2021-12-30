@@ -51,20 +51,25 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
       // https://docs.dhtmlx.com/gantt/desktop__extensions_list.html#verticalmarker
       marker: true,
       // https://docs.dhtmlx.com/gantt/desktop__extensions_list.html#tooltip
-      tooltip: true
+      tooltip: true,
     });
 
-    gantt.templates.tooltip_text = function(start: Date, end: Date, task) {
-        let buildStr = "<b>Title:</b> " + task.text + "<br/>";
+    gantt.templates.tooltip_text = function (start: Date, end: Date, task) {
+      let buildStr = "<b>Title:</b> " + task.text + "<br/>";
 
-        if (task.unplanned) {
-            buildStr += "<b>Progress:</b> Unplanned<br/>"
-        } else {
-            buildStr += "<b>Progress:</b> " + task.progress + "<br/>" + "<b>Start:</b> " +
-            Gantt.DATE_TO_STR(start) +
-            "<br/><b>End:</b> " +
-            Gantt.DATE_TO_STR(end) + "<br/>"
-        }
+      if (task.unplanned) {
+        buildStr += "<b>Progress:</b> Unplanned<br/>";
+      } else {
+        buildStr +=
+          "<b>Progress:</b> " +
+          task.progress +
+          "<br/>" +
+          "<b>Start:</b> " +
+          Gantt.DATE_TO_STR(start) +
+          "<br/><b>End:</b> " +
+          Gantt.DATE_TO_STR(end) +
+          "<br/>";
+      }
 
       return buildStr;
     };
@@ -96,12 +101,12 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
               view: "grid",
               scrollX: "gridScroll",
               scrollable: true,
-              scrollY: "scrollVer"
+              scrollY: "scrollVer",
             },
 
             // horizontal scrollbar for the grid
-            { view: "scrollbar", id: "gridScroll", group: "horizontal" }
-          ]
+            { view: "scrollbar", id: "gridScroll", group: "horizontal" },
+          ],
         },
         { resizer: true, width: 1 },
         {
@@ -109,11 +114,11 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
             { view: "timeline", scrollX: "scrollHor", scrollY: "scrollVer" },
 
             // horizontal scrollbar for the timeline
-            { view: "scrollbar", id: "scrollHor", group: "horizontal" }
-          ]
+            { view: "scrollbar", id: "scrollHor", group: "horizontal" },
+          ],
         },
-        { view: "scrollbar", id: "scrollVer" }
-      ]
+        { view: "scrollbar", id: "scrollVer" },
+      ],
     };
 
     // Task table columns.
@@ -121,15 +126,15 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
       { name: "id", label: "ID", width: "50" },
       { name: "text", label: "Title", width: "*", tree: true },
       { name: "start_date", label: "Start Date", align: "center", width: 100 },
-      { name: "end_date", label: "End Date", align: "center", width: 100 }
+      { name: "end_date", label: "End Date", align: "center", width: 100 },
     ];
 
     // Timeline tasks display.
-    gantt.templates.rightside_text = function(start, end, task) {
+    gantt.templates.rightside_text = function (start, end, task) {
       return task.text;
     };
 
-    gantt.templates.task_text = function(start, end, task) {
+    gantt.templates.task_text = function (start, end, task) {
       return "";
     };
   }
@@ -147,7 +152,7 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
         gantt.config.scale_height = 27;
         break;
       case DisplayInterval.Week:
-        var weekScaleTemplate = function(date: Date) {
+        var weekScaleTemplate = function (date: Date) {
           var dateToStr = gantt.date.date_to_str("%M %d");
           var endDate = gantt.date.add(
             gantt.date.add(date, 1, "week"),
@@ -165,12 +170,12 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
         };
         gantt.config.scales = [
           { unit: "week", step: 1, format: weekScaleTemplate },
-          { unit: "day", step: 1, format: "%D" }
+          { unit: "day", step: 1, format: "%D" },
         ];
         gantt.config.scale_height = 50;
         break;
       case DisplayInterval["Bi-Weekly"]:
-        var weekScaleTemplate = function(date: Date) {
+        var weekScaleTemplate = function (date: Date) {
           var dateToStr = gantt.date.date_to_str("%d %M");
           var endDate = gantt.date.add(
             gantt.date.add(date, 2, "week"),
@@ -181,12 +186,12 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
         };
         gantt.config.scales = [
           { unit: "week", step: 2, format: weekScaleTemplate },
-          { unit: "day", step: 1, format: "%D" }
+          { unit: "day", step: 1, format: "%D" },
         ];
         gantt.config.scale_height = 50;
         break;
       case DisplayInterval.Sprint:
-        var weekScaleTemplate = function(date: Date) {
+        var weekScaleTemplate = function (date: Date) {
           var dateToStr = gantt.date.date_to_str("%d %M");
           var endDate = gantt.date.add(
             gantt.date.add(date, 2, "week"),
@@ -197,19 +202,19 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
         };
         gantt.config.scales = [
           { unit: "week", step: 2, format: weekScaleTemplate },
-          { unit: "day", step: 1, format: "%D" }
+          { unit: "day", step: 1, format: "%D" },
         ];
         gantt.config.scale_height = 50;
         break;
       case DisplayInterval.Month:
         gantt.config.scales = [
           { unit: "month", step: 1, format: "%F, %Y" },
-          { unit: "day", step: 7, format: "%j" }
+          { unit: "day", step: 7, format: "%j" },
         ];
         gantt.config.scale_height = 50;
         break;
       case DisplayInterval.Quarter:
-        var quarterLabel = function(date: Date) {
+        var quarterLabel = function (date: Date) {
           var month = date.getMonth();
           var qNumber;
 
@@ -227,14 +232,14 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
         };
         gantt.config.scales = [
           { unit: "year", step: 1, format: "%Y" },
-          { unit: "quarter", step: 1, format: quarterLabel }
+          { unit: "quarter", step: 1, format: quarterLabel },
         ];
         gantt.config.scale_height = 50;
         break;
       case DisplayInterval.Year:
         gantt.config.scales = [
           { unit: "year", step: 1, format: "%Y" },
-          { unit: "month", step: 1, format: "%M" }
+          { unit: "month", step: 1, format: "%M" },
         ];
         gantt.config.scale_height = 90;
         break;
@@ -245,7 +250,7 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
     return (
       <div
         className="full-size"
-        ref={input => {
+        ref={(input) => {
           this.ganttContainer = input;
         }}
         style={{ width: "100%", height: "650px" }}
