@@ -19,4 +19,9 @@ export interface IProjectRoadmap {
    * The gantt configuration including the data.
    */
   ganttConfig: IGanttConfig;
+
+  /**
+   * Retreive the data based on now (undefined) or as of a given date.
+   */
+  asOf: Date | undefined;
 }

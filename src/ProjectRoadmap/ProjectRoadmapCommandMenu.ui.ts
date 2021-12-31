@@ -15,11 +15,6 @@ export class ProjectRoadmapCommandMenu {
   static readonly INTERVAL_PREFIX_ID = "itrp-pm-roadmap-header-interval.sub.";
 
   /**
-   * Prefix for as of ID.
-   */
-  static readonly AS_OF_PREFIX_ID = "itrp-pm-roadmap-header-asof.sub.";
-
-  /**
    * Refresh button.
    */
   private refreshButton: IHeaderCommandBarItem = {
@@ -28,64 +23,12 @@ export class ProjectRoadmapCommandMenu {
     },
     id: "itrp-pm-roadmap-header-refresh",
     text: "Refresh",
-    disabled: true,
   };
 
   /**
    * Interval button options.
    */
   private intervalOptionItems: IMenuItem[];
-
-  private asOfOptionItems: IMenuItem[] = [
-    {
-      id: ProjectRoadmapCommandMenu.AS_OF_PREFIX_ID + "now",
-      text: "Now",
-      onActivate: function () {},
-      data: "Now",
-      readonly: true,
-    },
-    {
-      id: ProjectRoadmapCommandMenu.AS_OF_PREFIX_ID + "beginningOfMonth",
-      text: "Beginning of the Month",
-      onActivate: function () {},
-      data: "Month",
-      readonly: true,
-    },
-    {
-      id: ProjectRoadmapCommandMenu.AS_OF_PREFIX_ID + "beginningOfQuarter",
-      text: "Beginning of the Quarter",
-      onActivate: function () {},
-      data: "Quarter",
-      readonly: true,
-    },
-    {
-      id: ProjectRoadmapCommandMenu.AS_OF_PREFIX_ID + "beginningOfFYYear",
-      text: "Beginning of the Year",
-      onActivate: function () {},
-      data: "Year",
-      readonly: true,
-    },
-    {
-      id: ProjectRoadmapCommandMenu.AS_OF_PREFIX_ID + "custom",
-      text: "Custom",
-      onActivate: function () {},
-      data: "Custom",
-      readonly: true,
-    },
-  ];
-
-  /**
-   * As of button.
-   */
-  private asOfButton: IHeaderCommandBarItem = {
-    id: "itrp-pm-roadmap-header-asOf",
-    text: "As Of",
-    disabled: false,
-    subMenuProps: {
-      items: this.asOfOptionItems,
-      id: "itrp-pm-roadmap-header-asof.submenu",
-    },
-  };
 
   /**
    * Interval button.
@@ -98,7 +41,6 @@ export class ProjectRoadmapCommandMenu {
 
   /** Used to trigger update. */
   buttons: ObservableValue<IHeaderCommandBarItem[]> = new ObservableValue([
-    this.asOfButton,
     this.intervalButton,
     this.refreshButton,
   ]);

@@ -106,6 +106,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
           links: [],
         },
       },
+      asOf: undefined,
     };
     this.commandButtons = new ProjectRoadmapCommandMenu();
 
@@ -189,16 +190,17 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    * Refresh the gantt chart data by reloading the gantt information and applying the filter.
    */
   private async refreshGantt(): Promise<void> {
-    this.pageData.roadmap = await ProjectRoadmapService.createGantt(undefined);
+    this.pageData.roadmap = await ProjectRoadmapService.createGantt(
+      this.pageData.asOf
+    );
     this.filterRoadmap();
   }
 
   /**
-   * User chose to change interval.
+   * User choose to change interval.
    *
    * @param menuItem the menu item that was selected.
    * @param event the event that caused the action
-   * @returns always true
    */
   private changeInterval(
     menuItem: IMenuItem,
