@@ -129,12 +129,16 @@ export class ProjectRoadmapService {
 
           currentNode.children.forEach((child) => {
             if (child.data) {
-              if (startDate === undefined || (
-                child.data.start && child.data.start < startDate)){
+              if (
+                startDate === undefined ||
+                (child.data.start && child.data.start < startDate)
+              ) {
                 startDate = child.data.start;
               }
-              if (endDate === undefined || (
-                child.data.end && child.data.end > endDate)){
+              if (
+                endDate === undefined ||
+                (child.data.end && child.data.end > endDate)
+              ) {
                 endDate = child.data.end;
               }
 
@@ -146,12 +150,12 @@ export class ProjectRoadmapService {
           });
           calculatedProgress /= currentNode.totalChildren();
 
-          if(startDate && workItem.start === undefined){
+          if (startDate && workItem.start === undefined) {
             workItem.start = startDate;
             workItem.calculatedDates = true;
           }
 
-          if(endDate && workItem.end === undefined){
+          if (endDate && workItem.end === undefined) {
             workItem.end = endDate;
             workItem.calculatedDates = true;
           }

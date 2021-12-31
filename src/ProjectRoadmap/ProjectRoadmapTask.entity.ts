@@ -64,12 +64,12 @@ export class ProjectRoadmapTaskEntity extends WorkItemBaseEntity {
   /**
    * Current task is a forcast and may be inaccurate.
    */
-  forcast:boolean = false;
+  forcast: boolean = false;
 
   /**
    * Current task didn't have a start/end date defined, therefore this becomes derived.
    */
-  calculatedDates:boolean = false;
+  calculatedDates: boolean = false;
 
   /**
    * @inheritdoc

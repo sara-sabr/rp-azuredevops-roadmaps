@@ -64,7 +64,11 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
       tooltip: true,
     });
 
-    gantt.templates.tooltip_text = function (start: Date, end: Date, task:GanttTask) {
+    gantt.templates.tooltip_text = function (
+      start: Date,
+      end: Date,
+      task: GanttTask
+    ) {
       let buildStr = "<b>Title:</b> " + task.text + "<br/>";
 
       if (task.unscheduled) {
@@ -75,11 +79,11 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
           Math.round(task.progress * 100) +
           "%<br/>" +
           "<b>" +
-          (task.calculatedDates ? "Calculated ":"") +
+          (task.calculatedDates ? "Calculated " : "") +
           "Start:</b> " +
           Gantt.DATE_TO_STR(start) +
           "<br/><b>" +
-          (task.calculatedDates ? "Calculated ":"") +
+          (task.calculatedDates ? "Calculated " : "") +
           "End:</b> " +
           Gantt.DATE_TO_STR(end) +
           "<br/>";
@@ -89,14 +93,13 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
     };
 
     // Configure the quick info
-
-    gantt.config.quickinfo_buttons=["edit_details_button"];
+    gantt.config.quickinfo_buttons = ["edit_details_button"];
     gantt.locale.labels["edit_details_button"] = "Edit Item";
-    gantt.$click.buttons.edit_details_button=function(id:string){
+    gantt.$click.buttons.edit_details_button = function (id: string) {
       _self.openWorkitem(id);
       return false; //blocks the default behavior
     };
-    gantt.templates.quick_info_content = function(start, end, task){
+    gantt.templates.quick_info_content = function (start, end, task) {
       return task.description;
     };
   }
@@ -107,8 +110,8 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
    * @param id the work item ID
    */
   private async openWorkitem(id: string): Promise<void> {
-     const witItemUrl = await ProjectService.generateWitEditUrl(id);
-     window.open(witItemUrl, "_blank");
+    const witItemUrl = await ProjectService.generateWitEditUrl(id);
+    window.open(witItemUrl, "_blank");
   }
 
   /**
@@ -276,9 +279,7 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
         gantt.config.scale_height = 50;
         break;
       case DisplayInterval.Year:
-        gantt.config.scales = [
-          { unit: "year", step: 1, format: "%Y" },
-        ];
+        gantt.config.scales = [{ unit: "year", step: 1, format: "%Y" }];
         break;
     }
   }

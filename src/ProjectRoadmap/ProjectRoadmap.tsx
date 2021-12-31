@@ -88,7 +88,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    *
    * @see https://reactjs.org/blog/2018/06/07/you-probably-dont-need-derived-state.html
    */
-  private forceRefreshFlipper:number = 0;
+  private forceRefreshFlipper: number = 0;
 
   /**
    * Constructor
@@ -177,7 +177,9 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    */
   private initEvents(): void {
     // Refresh event
-    this.commandButtons.attachOnRefreshActivate(() => {this.refreshGantt();});
+    this.commandButtons.attachOnRefreshActivate(() => {
+      this.refreshGantt();
+    });
 
     // Interval change.
     this.commandButtons.attachOnIntervalActivate(this.changeInterval);
@@ -315,8 +317,11 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
                   /**
                    * Show the gantt chart if we have data.
                    */
-                  this.pageData.ganttConfig.data.tasks.length > 0 &&  (
-                    <Gantt config={this.pageData.ganttConfig} key={this.forceRefreshFlipper}/>
+                  this.pageData.ganttConfig.data.tasks.length > 0 && (
+                    <Gantt
+                      config={this.pageData.ganttConfig}
+                      key={this.forceRefreshFlipper}
+                    />
                   )
                 }
                 {
