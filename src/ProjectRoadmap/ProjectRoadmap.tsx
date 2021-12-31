@@ -80,8 +80,21 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    */
   private areaPathList: IListBoxItem[] = [];
 
-  private viewChangesObserver: ObservableValue<IGanttConfig>;
+  /**
+   * This flag is incremented to force component reload.
+   *
+   * Breaking a reactjs pattern due to state and props being mixed together as our entire
+   * Gantt needs to be rebuilt anyways.
+   *
+   * @see https://reactjs.org/blog/2018/06/07/you-probably-dont-need-derived-state.html
+   */
+  private forceRefreshFlipper:number = 0;
 
+  /**
+   * Constructor
+   *
+   * @param props the properties
+   */
   constructor(props: {} | Readonly<{}>) {
     super(props);
     this.pageData = {
@@ -94,7 +107,6 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
         },
       },
     };
-    this.viewChangesObserver = new ObservableValue(this.pageData.ganttConfig);
     this.commandButtons = new ProjectRoadmapCommandMenu();
 
     this.state = this.pageData;
@@ -156,7 +168,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
         entry.hide = areaPaths.indexOf(topArea) === -1;
       });
     }
-
+    this.populateGantt();
     this.refreshState();
   }
 
@@ -164,14 +176,19 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    * Attach the events.
    */
   private initEvents(): void {
-    // This is required due to JS closures.
-    const self = this;
-
     // Refresh event
-    this.commandButtons.attachOnRefreshActivate(() => {});
+    this.commandButtons.attachOnRefreshActivate(() => {this.refreshGantt();});
 
     // Interval change.
     this.commandButtons.attachOnIntervalActivate(this.changeInterval);
+  }
+
+  /**
+   * Refresh the gantt chart data by reloading the gantt information and applying the filter.
+   */
+  private async refreshGantt(): Promise<void> {
+    this.pageData.roadmap = await ProjectRoadmapService.createGantt(undefined);
+    this.filterRoadmap();
   }
 
   /**
@@ -186,6 +203,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     event?: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
   ): void {
     ProjectRoadmap.getInstance().pageData.ganttConfig.unit = menuItem.data;
+    console.log("Refresh interval");
     ProjectRoadmap.getInstance().refreshState();
   }
 
@@ -205,10 +223,8 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private async performMountAsync(): Promise<void> {
     await SDK.init();
     this.projectName = await ProjectService.getProjectName();
-    this.pageData.roadmap = await ProjectRoadmapService.createGantt(undefined);
     await this.populateAreaPath();
-    this.populateGantt();
-    this.refreshState();
+    await this.refreshGantt();
   }
 
   /**
@@ -236,6 +252,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    */
   public refreshState(): void {
     this.commandButtons.updateButtonStatuses(this.pageData);
+    this.forceRefreshFlipper++;
     this.setState(this.pageData);
   }
 
@@ -253,6 +270,8 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
       }
     });
 
+    console.log("DATA    ==============");
+    console.log(tasks);
     this.pageData.ganttConfig.data.tasks = tasks;
   }
 
@@ -310,8 +329,8 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
                   /**
                    * Show the gantt chart if we have data.
                    */
-                  this.pageData.ganttConfig.data.tasks.length > 0 && (
-                    <Gantt config={this.pageData.ganttConfig} />
+                  this.pageData.ganttConfig.data.tasks.length > 0 &&  (
+                    <Gantt config={this.pageData.ganttConfig} key={this.forceRefreshFlipper}/>
                   )
                 }
                 {

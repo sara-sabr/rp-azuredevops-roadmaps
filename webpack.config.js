@@ -48,14 +48,6 @@ module.exports = {
   output: {
     filename: "[name]/[name].js",
   },
-  devtool: "inline-source-map",
-  devServer: {
-    https: true,
-    port: 3000,
-    static: {
-      directory: path.join(__dirname),
-    },
-  },
   resolve: {
     extensions: [".ts", ".tsx", ".js"],
     alias: {
@@ -73,7 +65,9 @@ module.exports = {
     rules: [
       {
         test: /\.tsx?$/,
-        use: "ts-loader"
+        loader: "ts-loader",
+        include: path.resolve(__dirname, 'src'),
+        exclude: /node_modules/,
       },
       {
         test: /\.scss$/,
@@ -98,6 +92,7 @@ module.exports = {
       },
       {
         test: /\.html$/,
+        include: path.resolve(__dirname, 'src'),
         use: "file-loader"
       }
     ]

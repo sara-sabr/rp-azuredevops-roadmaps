@@ -20,20 +20,6 @@ export class ProjectRoadmapCommandMenu {
   static readonly AS_OF_PREFIX_ID = "itrp-pm-roadmap-header-asof.sub.";
 
   /**
-   * The download button
-   */
-  private printButton: IHeaderCommandBarItem = {
-    iconProps: {
-      iconName: "Print",
-    },
-    id: "itrp-pm-roadmap-header-print",
-    important: true,
-    text: "Print",
-    disabled: true,
-    onActivate: function () {},
-  };
-
-  /**
    * Refresh button.
    */
   private refreshButton: IHeaderCommandBarItem = {
@@ -114,7 +100,6 @@ export class ProjectRoadmapCommandMenu {
   buttons: ObservableValue<IHeaderCommandBarItem[]> = new ObservableValue([
     this.asOfButton,
     this.intervalButton,
-    this.printButton,
     this.refreshButton,
   ]);
 
@@ -190,20 +175,6 @@ export class ProjectRoadmapCommandMenu {
   }
 
   /**
-   * Attach the event to a print button click.
-   *
-   * @param event event to fire
-   */
-  public attachOnPrintActivate(
-    event: (
-      menuItem: IMenuItem,
-      event?: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
-    ) => boolean | void
-  ): void {
-    this.printButton.onActivate = event;
-  }
-
-  /**
    * Bulk attach the event to all buttons.
    *
    * @param event the event to fire
@@ -214,7 +185,7 @@ export class ProjectRoadmapCommandMenu {
       event?: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
     ) => boolean | void
   ): void {
-    this.attachOnPrintActivate(event);
     this.attachOnRefreshActivate(event);
+    this.attachOnIntervalActivate(event);
   }
 }

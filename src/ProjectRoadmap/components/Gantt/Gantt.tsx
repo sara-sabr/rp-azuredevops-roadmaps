@@ -6,6 +6,13 @@ import "./Gantt.css";
 import { IGanttConfig } from "./IGantt.config";
 import { DisplayInterval } from "../../DisplayInterval.enum";
 
+/**
+ * Gantt component leveraging dhtmlxGantt which is an open source JavaScript
+ * Gantt chart that helps you illustrate a project schedule in a nice-looking chart.
+ *
+ * @see https://github.com/DHTMLX/gantt
+ * @see https://docs.dhtmlx.com/gantt/
+ */
 export default class Gantt extends Component<{ config: IGanttConfig }> {
   /**
    * The expected format of the date.
@@ -33,7 +40,6 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
 
     gantt.config.date_format = Gantt.DATE_FORMAT;
     gantt.config.show_unscheduled = true;
-
     this.configureUI();
     this.configurePlugins();
     this.setScaleConfig(this.props.config.unit);
@@ -81,6 +87,7 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
   componentDidMount() {
     if (this.ganttContainer) {
       gantt.init(this.ganttContainer);
+      gantt.clearAll();
       gantt.parse(this.props.config.data);
     }
   }
@@ -145,11 +152,13 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
    * @param level defined as either day, week, biweek, month, quarter or year.
    */
   private setScaleConfig(level: DisplayInterval): void {
-    console.log("Set " + level);
     switch (level) {
       case DisplayInterval.Day:
-        gantt.config.scales = [{ unit: "day", step: 1, format: "%M %d" }];
-        gantt.config.scale_height = 27;
+        gantt.config.scales = [
+          { unit: "month", step: 1, format: "%Y %F" },
+          { unit: "day", step: 1, format: "%j" },
+        ];
+        gantt.config.scale_height = 50;
         break;
       case DisplayInterval.Week:
         var weekScaleTemplate = function (date: Date) {
@@ -208,8 +217,8 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
         break;
       case DisplayInterval.Month:
         gantt.config.scales = [
-          { unit: "month", step: 1, format: "%F, %Y" },
-          { unit: "day", step: 7, format: "%j" },
+          { unit: "year", step: 1, format: "%Y" },
+          { unit: "month", step: 1, format: "%M" },
         ];
         gantt.config.scale_height = 50;
         break;
@@ -239,9 +248,7 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
       case DisplayInterval.Year:
         gantt.config.scales = [
           { unit: "year", step: 1, format: "%Y" },
-          { unit: "month", step: 1, format: "%M" },
         ];
-        gantt.config.scale_height = 90;
         break;
     }
   }
