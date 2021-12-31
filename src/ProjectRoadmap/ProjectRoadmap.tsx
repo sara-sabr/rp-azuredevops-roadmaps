@@ -203,7 +203,6 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     event?: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
   ): void {
     ProjectRoadmap.getInstance().pageData.ganttConfig.unit = menuItem.data;
-    console.log("Refresh interval");
     ProjectRoadmap.getInstance().refreshState();
   }
 
@@ -270,21 +269,8 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
       }
     });
 
-    console.log("DATA    ==============");
-    console.log(tasks);
     this.pageData.ganttConfig.data.tasks = tasks;
   }
-
-  /**
-   * Handle when select is clicked.
-   *
-   * @param task the task
-   * @param isSelected whether it is selected or not selected
-   */
-  // private async openWorkitem(task: Task, isSelected: boolean): Promise<void> {
-  //   const witItemUrl = await ProjectService.generateWitEditUrl(task.id);
-  //   window.open(witItemUrl, "_blank");
-  // }
 
   public render(): JSX.Element {
     return (

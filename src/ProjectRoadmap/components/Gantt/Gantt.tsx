@@ -5,6 +5,7 @@ import "dhtmlx-gantt/codebase/dhtmlxgantt.css";
 import "./Gantt.css";
 import { IGanttConfig } from "./IGantt.config";
 import { DisplayInterval } from "../../DisplayInterval.enum";
+import { ProjectService } from "@esdc-it-rp/azuredevops-common";
 
 /**
  * Gantt component leveraging dhtmlxGantt which is an open source JavaScript
@@ -49,6 +50,8 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
    * Configure Gantt plugins.
    */
   private configurePlugins(): void {
+    const _self = this;
+
     gantt.plugins({
       // https://docs.dhtmlx.com/gantt/desktop__extensions_list.html#keyboardnavigation
       keyboard_navigation: true,
@@ -79,6 +82,28 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
 
       return buildStr;
     };
+
+    // Configure the quick info
+
+    gantt.config.quickinfo_buttons=["edit_details_button"];
+    gantt.locale.labels["edit_details_button"] = "Edit Item";
+    gantt.$click.buttons.edit_details_button=function(id:string){
+      _self.openWorkitem(id);
+      return false; //blocks the default behavior
+    };
+    gantt.templates.quick_info_content = function(start, end, task){
+      return task.description;
+    };
+  }
+
+  /**
+   * Handle when select is clicked.
+   *
+   * @param id the work item ID
+   */
+  private async openWorkitem(id: string): Promise<void> {
+     const witItemUrl = await ProjectService.generateWitEditUrl(id);
+     window.open(witItemUrl, "_blank");
   }
 
   /**

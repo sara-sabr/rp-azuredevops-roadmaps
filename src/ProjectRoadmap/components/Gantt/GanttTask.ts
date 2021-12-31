@@ -61,6 +61,11 @@ export class GanttTask {
   unscheduled?: boolean = undefined;
 
   /**
+   * Description of work item.
+   */
+  description: string = "";
+
+  /**
    * Convert a ProjectRoadmapTaskEntity information to a Gantt Task.
    *
    * @param entity the object to convert
@@ -72,6 +77,7 @@ export class GanttTask {
     instance.text = entity.title;
     instance.type = "task";
     instance.progress = entity.progress / 100;
+    instance.description = entity.description;
 
     if (entity.start && entity.end) {
       instance.start_date = Gantt.DATE_TO_STR(entity.start);

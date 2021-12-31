@@ -57,6 +57,11 @@ export class ProjectRoadmapTaskEntity extends WorkItemBaseEntity {
   areaPath: string = "";
 
   /**
+   * Work item description.
+   */
+  description: string = "";
+
+  /**
    * @inheritdoc
    */
   public populateFromWorkItem(workItem: WorkItem): void {
@@ -65,5 +70,6 @@ export class ProjectRoadmapTaskEntity extends WorkItemBaseEntity {
     this.end = workItem.fields[Constants.WIT_FIELD_FINISH_DATE];
     this.state = workItem.fields[Constants.WIT_FIELD_STATE];
     this.areaPath = workItem.fields[Constants.WIT_FIELD_AREA_PATH];
+    this.description = workItem.fields[Constants.WIT_FIELD_DESCRIPTION];
   }
 }

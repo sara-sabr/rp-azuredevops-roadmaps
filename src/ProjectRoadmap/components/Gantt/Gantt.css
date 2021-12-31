@@ -1,3 +1,7 @@
 .gantt-container {
     height: 100%;
 }
+
+.gantt_cal_qi_content li {
+    list-style: inherit;
+}
