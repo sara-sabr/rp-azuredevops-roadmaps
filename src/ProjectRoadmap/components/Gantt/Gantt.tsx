@@ -6,6 +6,7 @@ import "./Gantt.css";
 import { IGanttConfig } from "./IGantt.config";
 import { DisplayInterval } from "../../DisplayInterval.enum";
 import { ProjectService } from "@esdc-it-rp/azuredevops-common";
+import { GanttTask } from "./GanttTask";
 
 /**
  * Gantt component leveraging dhtmlxGantt which is an open source JavaScript
@@ -63,19 +64,23 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
       tooltip: true,
     });
 
-    gantt.templates.tooltip_text = function (start: Date, end: Date, task) {
+    gantt.templates.tooltip_text = function (start: Date, end: Date, task:GanttTask) {
       let buildStr = "<b>Title:</b> " + task.text + "<br/>";
 
-      if (task.unplanned) {
+      if (task.unscheduled) {
         buildStr += "<b>Progress:</b> Unplanned<br/>";
       } else {
         buildStr +=
           "<b>Progress:</b> " +
-          task.progress +
-          "<br/>" +
-          "<b>Start:</b> " +
+          Math.round(task.progress * 100) +
+          "%<br/>" +
+          "<b>" +
+          (task.calculatedDates ? "Calculated ":"") +
+          "Start:</b> " +
           Gantt.DATE_TO_STR(start) +
-          "<br/><b>End:</b> " +
+          "<br/><b>" +
+          (task.calculatedDates ? "Calculated ":"") +
+          "End:</b> " +
           Gantt.DATE_TO_STR(end) +
           "<br/>";
       }

@@ -105,6 +105,8 @@ export class ProjectRoadmapService {
 
     let workItem: ProjectRoadmapTaskEntity;
     let calculatedProgress: number;
+    let startDate: Date | undefined;
+    let endDate: Date | undefined;
 
     for (var i = 0; i <= result.length; i++) {
       workItem = result[i];
@@ -122,8 +124,20 @@ export class ProjectRoadmapService {
             calculatedProgress = 100;
           }
         } else {
+          startDate = undefined;
+          endDate = undefined;
+
           currentNode.children.forEach((child) => {
             if (child.data) {
+              if (startDate === undefined || (
+                child.data.start && child.data.start < startDate)){
+                startDate = child.data.start;
+              }
+              if (endDate === undefined || (
+                child.data.end && child.data.end > endDate)){
+                endDate = child.data.end;
+              }
+
               // If no progress set, set to 0
               calculatedProgress += child.data.progress
                 ? child.data.progress
@@ -131,6 +145,16 @@ export class ProjectRoadmapService {
             }
           });
           calculatedProgress /= currentNode.totalChildren();
+
+          if(startDate && workItem.start === undefined){
+            workItem.start = startDate;
+            workItem.calculatedDates = true;
+          }
+
+          if(endDate && workItem.end === undefined){
+            workItem.end = endDate;
+            workItem.calculatedDates = true;
+          }
         }
 
         workItem.progress = calculatedProgress;

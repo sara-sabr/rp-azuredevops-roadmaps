@@ -66,6 +66,16 @@ export class GanttTask {
   description: string = "";
 
   /**
+   * Current task is a forcast and may be inaccurate.
+   */
+   forcast:boolean = false;
+
+   /**
+    * Current task didn't have a start/end date defined, therefore this becomes derived.
+    */
+   calculatedDates:boolean = false;
+
+  /**
    * Convert a ProjectRoadmapTaskEntity information to a Gantt Task.
    *
    * @param entity the object to convert
@@ -78,6 +88,8 @@ export class GanttTask {
     instance.type = "task";
     instance.progress = entity.progress / 100;
     instance.description = entity.description;
+    instance.forcast = entity.forcast;
+    instance.calculatedDates = entity.calculatedDates;
 
     if (entity.start && entity.end) {
       instance.start_date = Gantt.DATE_TO_STR(entity.start);
