@@ -54,6 +54,11 @@ export class GanttTask {
   type: string = "";
 
   /**
+   * The actual type in Azure (PBI, Epic, etc...)
+   */
+  azureType: string = "";
+
+  /**
    * Whether this task is scheduled or not.
    *
    * To be scheduled, both start_date and end_date must be defined.
@@ -86,6 +91,7 @@ export class GanttTask {
     instance.id = entity.id.toString();
     instance.text = entity.title;
     instance.type = "task";
+    instance.azureType = entity.type;
     instance.progress = entity.progress / 100;
     instance.description = entity.description;
     instance.forcast = entity.forcast;

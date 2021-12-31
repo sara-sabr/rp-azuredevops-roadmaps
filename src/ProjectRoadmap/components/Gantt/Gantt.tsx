@@ -5,7 +5,7 @@ import "dhtmlx-gantt/codebase/dhtmlxgantt.css";
 import "./Gantt.css";
 import { IGanttConfig } from "./IGantt.config";
 import { DisplayInterval } from "../../DisplayInterval.enum";
-import { ProjectService } from "@esdc-it-rp/azuredevops-common";
+import { Constants, ProjectService } from "@esdc-it-rp/azuredevops-common";
 import { GanttTask } from "./GanttTask";
 
 /**
@@ -99,7 +99,10 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
       _self.openWorkitem(id);
       return false; //blocks the default behavior
     };
-    gantt.templates.quick_info_content = function (start, end, task) {
+    gantt.templates.quick_info_content = function (
+      start: Date,
+      end: Date,
+      task: GanttTask) {
       return task.description;
     };
   }
@@ -129,6 +132,8 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
    * Configure the UI.
    */
   private configureUI(): void {
+    const _self = this;
+
     // Configure the Container.
     gantt.config.layout = {
       css: "gantt_container",
@@ -170,13 +175,54 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
     ];
 
     // Timeline tasks display.
-    gantt.templates.rightside_text = function (start, end, task) {
+    gantt.templates.rightside_text = function (
+      start: Date,
+      end: Date,
+      task: GanttTask) {
       return task.text;
     };
 
-    gantt.templates.task_text = function (start, end, task) {
+    gantt.templates.task_text = function (
+      start: Date,
+      end: Date,
+      task: GanttTask) {
       return "";
     };
+
+    gantt.templates.task_class = function (
+      start: Date,
+      end: Date,
+      task: GanttTask) {
+        return "gantt-" + _self.getTaskSuffixClass(task);
+    };
+
+    gantt.templates.grid_folder = function(task: GanttTask) {
+
+      switch (task.azureType) {
+        case Constants.WIT_TYPE_EPIC:
+          return "<div aria-label='Epic' class='work-item-type-icon bowtie-icon bowtie-symbol-crown' role='figure' style='color: rgb(255, 123, 0);'></div>";
+        case Constants.WIT_TYPE_FEATURE: return "feature";
+        case Constants.WIT_TYPE_PBI: return "pbi";
+        default:
+          return "";
+      }
+    };
+  }
+
+  /**
+   * Return the suffix for a given task
+   *
+   * @param task the task
+   * @returns the suffix for the given task.
+   */
+  private getTaskSuffixClass(task: GanttTask):string {
+    switch (task.azureType) {
+      case Constants.WIT_TYPE_EPIC: return "epic";
+      case Constants.WIT_TYPE_FEATURE: return "feature";
+      case Constants.WIT_TYPE_PBI: return "pbi";
+      default:
+        return "";
+    }
   }
 
   /**
@@ -291,7 +337,7 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
         ref={(input) => {
           this.ganttContainer = input;
         }}
-        style={{ width: "100%", height: "650px" }}
+        style={{ width: "100%", height: "740px" }}
       ></div>
     );
   }

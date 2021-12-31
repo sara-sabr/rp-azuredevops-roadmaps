@@ -66,8 +66,6 @@ module.exports = {
       {
         test: /\.tsx?$/,
         loader: "ts-loader",
-        include: path.resolve(__dirname, 'src'),
-        exclude: /node_modules/,
       },
       {
         test: /\.scss$/,
@@ -92,7 +90,6 @@ module.exports = {
       },
       {
         test: /\.html$/,
-        include: path.resolve(__dirname, 'src'),
         use: "file-loader"
       }
     ]
