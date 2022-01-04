@@ -105,6 +105,8 @@ export class ProjectRoadmapService {
 
     let workItem: ProjectRoadmapTaskEntity;
     let calculatedProgress: number;
+    let startDate: Date | undefined;
+    let endDate: Date | undefined;
 
     for (var i = 0; i <= result.length; i++) {
       workItem = result[i];
@@ -122,8 +124,24 @@ export class ProjectRoadmapService {
             calculatedProgress = 100;
           }
         } else {
+          startDate = undefined;
+          endDate = undefined;
+
           currentNode.children.forEach((child) => {
             if (child.data) {
+              if (
+                startDate === undefined ||
+                (child.data.start && child.data.start < startDate)
+              ) {
+                startDate = child.data.start;
+              }
+              if (
+                endDate === undefined ||
+                (child.data.end && child.data.end > endDate)
+              ) {
+                endDate = child.data.end;
+              }
+
               // If no progress set, set to 0
               calculatedProgress += child.data.progress
                 ? child.data.progress
@@ -131,6 +149,16 @@ export class ProjectRoadmapService {
             }
           });
           calculatedProgress /= currentNode.totalChildren();
+
+          if (startDate && workItem.start === undefined) {
+            workItem.start = startDate;
+            workItem.calculatedDates = true;
+          }
+
+          if (endDate && workItem.end === undefined) {
+            workItem.end = endDate;
+            workItem.calculatedDates = true;
+          }
         }
 
         workItem.progress = calculatedProgress;
@@ -138,6 +166,53 @@ export class ProjectRoadmapService {
     }
 
     return result;
+  }
+
+  /**
+   * Update the parent relationships of work items.
+   *
+   * @param roadmapTree the tree of search results.
+   * @param projectRoadmaps the current working roadmap data.
+   */
+  private static associateWorkItemsToParents(roadmapTree:SearchResultEntity<ProjectRoadmapTaskEntity, number>,
+    projectRoadmaps: ProjectRoadmapTaskEntity[]):void {
+
+    let currentNode: TreeNode<ProjectRoadmapTaskEntity, number> | undefined;
+    let currentParentId: number;
+
+    for (let entry of projectRoadmaps) {
+      currentParentId = entry.parent;
+      while (currentParentId !== 0 && currentParentId !== undefined) {
+        entry.project = currentParentId.toString();
+        currentNode = roadmapTree.nodeMap?.get(currentParentId);
+        if (currentNode && currentNode.data) {
+          currentParentId = currentNode.data.parent;
+        } else {
+          currentParentId = 0;
+        }
+      }
+    }
+  }
+
+  /**
+   * Push on the stack items that have data in a preorder visit where the top of the stack is what we visit first.
+   *
+   * @param roadmapTree the search result tree.
+   * @param stack the current stack.
+   */
+  private static pushPreorderStackOfDataNodes(roadmapTree:TreeNode<ProjectRoadmapTaskEntity, number>, stack: ProjectRoadmapTaskEntity[]):void {
+    let currentNode: TreeNode<ProjectRoadmapTaskEntity, number> | undefined;
+
+    // We will now walk the tree that is produced - Preorder walk.
+    if (!roadmapTree.isEmpty()) {
+      // Push all children on the stack only if data exists.
+      for (let x = roadmapTree.children.length - 1; x>=0; x--) {
+        currentNode = roadmapTree.children[x];
+        if (currentNode && currentNode.data) {
+          stack.push(currentNode.data);
+        }
+      }
+    }
   }
 
   /**
@@ -153,16 +228,8 @@ export class ProjectRoadmapService {
     let currentData: ProjectRoadmapTaskEntity | undefined;
     let currentNode: TreeNode<ProjectRoadmapTaskEntity, number> | undefined;
 
-    // We will now walk the tree that is produced - Preorder walk.
-    if (!roadmapTree.isEmpty()) {
-      // Push all the projects onto the stack.
-      // TODO: Fix order as last one will be popped first.
-      for (let node of roadmapTree.children) {
-        if (node.data) {
-          stack.push(node.data);
-        }
-      }
-    }
+    // Add all the projects.
+    ProjectRoadmapService.pushPreorderStackOfDataNodes(roadmapTree, stack);
 
     // Loop over the stack untl we finish walking the tree. - Preorder
     while (stack.length > 0) {
@@ -170,33 +237,14 @@ export class ProjectRoadmapService {
       if (currentData) {
         projectRoadmaps.push(currentData);
         currentNode = roadmapTree.nodeMap?.get(currentData.id);
-
         if (currentNode) {
           // Add all children.
-          for (let node of currentNode.children) {
-            if (node.data) {
-              // TODO: Fix order as last one will be popped first.
-              stack.push(node.data);
-            }
-          }
+          ProjectRoadmapService.pushPreorderStackOfDataNodes(currentNode, stack);
         }
       }
     }
 
-    let currentParentId: number;
-    for (let entry of projectRoadmaps) {
-      currentParentId = entry.parent;
-      while (currentParentId !== 0 && currentParentId !== undefined) {
-        entry.project = currentParentId.toString();
-        currentNode = roadmapTree.nodeMap?.get(currentParentId);
-        if (currentNode && currentNode.data) {
-          currentParentId = currentNode.data.parent;
-        } else {
-          currentParentId = 0;
-        }
-      }
-    }
-
+    ProjectRoadmapService.associateWorkItemsToParents(roadmapTree, projectRoadmaps);
     ProjectRoadmapService.updateWorkItemProgress(roadmapTree);
     return projectRoadmaps;
   }

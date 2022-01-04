@@ -2,7 +2,6 @@
   "compilerOptions": {
     "module": "amd",
     "moduleResolution": "node",
-    "sourceMap": true,
     "noImplicitAny": true,
     "noImplicitThis": true,
     "forceConsistentCasingInFileNames": true,

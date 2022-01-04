@@ -1,3 +1,33 @@
 .gantt-container {
     height: 100%;
 }
+
+.gantt_cal_qi_content li {
+    list-style: inherit;
+}
+
+.gantt-epic {
+    background-color: #ffc266;
+    border: 1px solid #e68a00;
+}
+
+.bowtie-symbol-crown {
+    font-family: "Bowtie";
+}
+
+.bowtie-symbol-crown::before {
+    content: "\eabe ";
+}
+
+.gantt-epic .gantt_task_progress {
+    background-color: #ffa31a;
+}
+
+.gantt-feature {
+    background-color: #e699ff;
+    border: 1px solid #8600b3;
+}
+
+.gantt-feature .gantt_task_progress {
+    background-color: #ac00e6;
+}

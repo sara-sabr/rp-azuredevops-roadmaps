@@ -5,7 +5,16 @@ import "dhtmlx-gantt/codebase/dhtmlxgantt.css";
 import "./Gantt.css";
 import { IGanttConfig } from "./IGantt.config";
 import { DisplayInterval } from "../../DisplayInterval.enum";
+import { Constants, ProjectService } from "@esdc-it-rp/azuredevops-common";
+import { GanttTask } from "./GanttTask";
 
+/**
+ * Gantt component leveraging dhtmlxGantt which is an open source JavaScript
+ * Gantt chart that helps you illustrate a project schedule in a nice-looking chart.
+ *
+ * @see https://github.com/DHTMLX/gantt
+ * @see https://docs.dhtmlx.com/gantt/
+ */
 export default class Gantt extends Component<{ config: IGanttConfig }> {
   /**
    * The expected format of the date.
@@ -33,7 +42,6 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
 
     gantt.config.date_format = Gantt.DATE_FORMAT;
     gantt.config.show_unscheduled = true;
-
     this.configureUI();
     this.configurePlugins();
     this.setScaleConfig(this.props.config.unit);
@@ -43,6 +51,8 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
    * Configure Gantt plugins.
    */
   private configurePlugins(): void {
+    const _self = this;
+
     gantt.plugins({
       // https://docs.dhtmlx.com/gantt/desktop__extensions_list.html#keyboardnavigation
       keyboard_navigation: true,
@@ -54,25 +64,57 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
       tooltip: true,
     });
 
-    gantt.templates.tooltip_text = function (start: Date, end: Date, task) {
+    gantt.templates.tooltip_text = function (
+      start: Date,
+      end: Date,
+      task: GanttTask
+    ) {
       let buildStr = "<b>Title:</b> " + task.text + "<br/>";
 
-      if (task.unplanned) {
+      if (task.unscheduled) {
         buildStr += "<b>Progress:</b> Unplanned<br/>";
       } else {
         buildStr +=
           "<b>Progress:</b> " +
-          task.progress +
-          "<br/>" +
-          "<b>Start:</b> " +
+          Math.round(task.progress * 100) +
+          "%<br/>" +
+          "<b>" +
+          (task.calculatedDates ? "Calculated " : "") +
+          "Start:</b> " +
           Gantt.DATE_TO_STR(start) +
-          "<br/><b>End:</b> " +
+          "<br/><b>" +
+          (task.calculatedDates ? "Calculated " : "") +
+          "End:</b> " +
           Gantt.DATE_TO_STR(end) +
           "<br/>";
       }
 
       return buildStr;
     };
+
+    // Configure the quick info
+    gantt.config.quickinfo_buttons = ["edit_details_button"];
+    gantt.locale.labels["edit_details_button"] = "Edit Item";
+    gantt.$click.buttons.edit_details_button = function (id: string) {
+      _self.openWorkitem(id);
+      return false; //blocks the default behavior
+    };
+    gantt.templates.quick_info_content = function (
+      start: Date,
+      end: Date,
+      task: GanttTask) {
+      return task.description;
+    };
+  }
+
+  /**
+   * Handle when select is clicked.
+   *
+   * @param id the work item ID
+   */
+  private async openWorkitem(id: string): Promise<void> {
+    const witItemUrl = await ProjectService.generateWitEditUrl(id);
+    window.open(witItemUrl, "_blank");
   }
 
   /**
@@ -81,6 +123,7 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
   componentDidMount() {
     if (this.ganttContainer) {
       gantt.init(this.ganttContainer);
+      gantt.clearAll();
       gantt.parse(this.props.config.data);
     }
   }
@@ -89,6 +132,8 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
    * Configure the UI.
    */
   private configureUI(): void {
+    const _self = this;
+
     // Configure the Container.
     gantt.config.layout = {
       css: "gantt_container",
@@ -130,13 +175,54 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
     ];
 
     // Timeline tasks display.
-    gantt.templates.rightside_text = function (start, end, task) {
+    gantt.templates.rightside_text = function (
+      start: Date,
+      end: Date,
+      task: GanttTask) {
       return task.text;
     };
 
-    gantt.templates.task_text = function (start, end, task) {
+    gantt.templates.task_text = function (
+      start: Date,
+      end: Date,
+      task: GanttTask) {
       return "";
     };
+
+    gantt.templates.task_class = function (
+      start: Date,
+      end: Date,
+      task: GanttTask) {
+        return "gantt-" + _self.getTaskSuffixClass(task);
+    };
+
+    gantt.templates.grid_folder = function(task: GanttTask) {
+
+      switch (task.azureType) {
+        case Constants.WIT_TYPE_EPIC:
+          return "<div aria-label='Epic' class='work-item-type-icon bowtie-icon bowtie-symbol-crown' role='figure' style='color: rgb(255, 123, 0);'></div>";
+        case Constants.WIT_TYPE_FEATURE: return "feature";
+        case Constants.WIT_TYPE_PBI: return "pbi";
+        default:
+          return "";
+      }
+    };
+  }
+
+  /**
+   * Return the suffix for a given task
+   *
+   * @param task the task
+   * @returns the suffix for the given task.
+   */
+  private getTaskSuffixClass(task: GanttTask):string {
+    switch (task.azureType) {
+      case Constants.WIT_TYPE_EPIC: return "epic";
+      case Constants.WIT_TYPE_FEATURE: return "feature";
+      case Constants.WIT_TYPE_PBI: return "pbi";
+      default:
+        return "";
+    }
   }
 
   /**
@@ -145,11 +231,13 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
    * @param level defined as either day, week, biweek, month, quarter or year.
    */
   private setScaleConfig(level: DisplayInterval): void {
-    console.log("Set " + level);
     switch (level) {
       case DisplayInterval.Day:
-        gantt.config.scales = [{ unit: "day", step: 1, format: "%M %d" }];
-        gantt.config.scale_height = 27;
+        gantt.config.scales = [
+          { unit: "month", step: 1, format: "%Y %F" },
+          { unit: "day", step: 1, format: "%j" },
+        ];
+        gantt.config.scale_height = 50;
         break;
       case DisplayInterval.Week:
         var weekScaleTemplate = function (date: Date) {
@@ -208,8 +296,8 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
         break;
       case DisplayInterval.Month:
         gantt.config.scales = [
-          { unit: "month", step: 1, format: "%F, %Y" },
-          { unit: "day", step: 7, format: "%j" },
+          { unit: "year", step: 1, format: "%Y" },
+          { unit: "month", step: 1, format: "%M" },
         ];
         gantt.config.scale_height = 50;
         break;
@@ -237,11 +325,7 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
         gantt.config.scale_height = 50;
         break;
       case DisplayInterval.Year:
-        gantt.config.scales = [
-          { unit: "year", step: 1, format: "%Y" },
-          { unit: "month", step: 1, format: "%M" },
-        ];
-        gantt.config.scale_height = 90;
+        gantt.config.scales = [{ unit: "year", step: 1, format: "%Y" }];
         break;
     }
   }
@@ -253,7 +337,7 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
         ref={(input) => {
           this.ganttContainer = input;
         }}
-        style={{ width: "100%", height: "650px" }}
+        style={{ width: "100%", height: "740px" }}
       ></div>
     );
   }

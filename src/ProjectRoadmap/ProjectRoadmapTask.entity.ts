@@ -57,6 +57,21 @@ export class ProjectRoadmapTaskEntity extends WorkItemBaseEntity {
   areaPath: string = "";
 
   /**
+   * Work item description.
+   */
+  description: string = "";
+
+  /**
+   * Current task is a forcast and may be inaccurate.
+   */
+  forcast: boolean = false;
+
+  /**
+   * Current task didn't have a start/end date defined, therefore this becomes derived.
+   */
+  calculatedDates: boolean = false;
+
+  /**
    * @inheritdoc
    */
   public populateFromWorkItem(workItem: WorkItem): void {
@@ -65,5 +80,6 @@ export class ProjectRoadmapTaskEntity extends WorkItemBaseEntity {
     this.end = workItem.fields[Constants.WIT_FIELD_FINISH_DATE];
     this.state = workItem.fields[Constants.WIT_FIELD_STATE];
     this.areaPath = workItem.fields[Constants.WIT_FIELD_AREA_PATH];
+    this.description = workItem.fields[Constants.WIT_FIELD_DESCRIPTION];
   }
 }
