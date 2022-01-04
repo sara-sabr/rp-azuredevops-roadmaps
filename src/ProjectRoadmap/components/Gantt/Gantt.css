@@ -11,12 +11,22 @@
     border: 1px solid #e68a00;
 }
 
-.bowtie-symbol-crown {
-    font-family: "Bowtie";
+.gantt-symbol {
+    content: "";
+    padding-right: 5px;
+    margin: 0.5em 5px;
 }
 
-.bowtie-symbol-crown::before {
-    content: "\eabe ";
+.gantt-symbol-epic {
+    background-color: #ffa31a;
+}
+
+.gantt-symbol-feature {
+    background-color: #e699ff;
+}
+
+.gantt-symbol-pbi {
+    background-color: #3db9d3;
 }
 
 .gantt-epic .gantt_task_progress {

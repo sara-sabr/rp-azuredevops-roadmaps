@@ -1,4 +1,6 @@
 import "./ProjectRoadmap.scss";
+import "./iconFont.css";
+import "azure-devops-ui/Core/override.css";
 
 // Library Level
 import * as React from "react";
@@ -12,7 +14,6 @@ import {
   HeaderTitleRow,
   TitleSize,
 } from "azure-devops-ui/Header";
-import { Observer } from "azure-devops-ui/Observer";
 
 import { HeaderCommandBar } from "azure-devops-ui/HeaderCommandBar";
 import { FilterBar } from "azure-devops-ui/FilterBar";
@@ -37,8 +38,6 @@ import { ProjectService } from "@esdc-it-rp/azuredevops-common";
 import Gantt from "./components/Gantt/Gantt";
 import { GanttTask } from "./components/Gantt/GanttTask";
 import { DisplayInterval } from "./DisplayInterval.enum";
-import { IGanttConfig } from "./components/Gantt/IGantt.config";
-
 /**
  * The status report page.
  */
@@ -288,9 +287,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
               </HeaderTitle>
             </HeaderTitleRow>
           </HeaderTitleArea>
-          <Observer items={this.commandButtons.buttons}>
-            <HeaderCommandBar items={this.commandButtons.buttons.value} />
-          </Observer>
+          <HeaderCommandBar items={this.commandButtons.buttons.value}  />
         </CustomHeader>
         <div className="page-content-left page-content-right page-content-top">
           {
