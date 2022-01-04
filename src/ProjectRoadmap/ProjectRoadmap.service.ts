@@ -169,49 +169,17 @@ export class ProjectRoadmapService {
   }
 
   /**
-   * Create the gantt chart
+   * Update the parent relationships of work items.
    *
-   * @param asOf date to pull data from or undefined for today.
-   * @returns the tasks for the gantt chart
+   * @param roadmapTree the tree of search results.
+   * @param projectRoadmaps the current working roadmap data.
    */
-  static async createGantt(asOf?: Date): Promise<ProjectRoadmapTaskEntity[]> {
-    const roadmapTree = await this.getRoadmaps(asOf);
-    const projectRoadmaps: ProjectRoadmapTaskEntity[] = [];
-    const stack: ProjectRoadmapTaskEntity[] = [];
-    let currentData: ProjectRoadmapTaskEntity | undefined;
+  private static associateWorkItemsToParents(roadmapTree:SearchResultEntity<ProjectRoadmapTaskEntity, number>,
+    projectRoadmaps: ProjectRoadmapTaskEntity[]):void {
+
     let currentNode: TreeNode<ProjectRoadmapTaskEntity, number> | undefined;
-
-    // We will now walk the tree that is produced - Preorder walk.
-    if (!roadmapTree.isEmpty()) {
-      // Push all the projects onto the stack.
-      // TODO: Fix order as last one will be popped first.
-      for (let node of roadmapTree.children) {
-        if (node.data) {
-          stack.push(node.data);
-        }
-      }
-    }
-
-    // Loop over the stack untl we finish walking the tree. - Preorder
-    while (stack.length > 0) {
-      currentData = stack.pop();
-      if (currentData) {
-        projectRoadmaps.push(currentData);
-        currentNode = roadmapTree.nodeMap?.get(currentData.id);
-
-        if (currentNode) {
-          // Add all children.
-          for (let node of currentNode.children) {
-            if (node.data) {
-              // TODO: Fix order as last one will be popped first.
-              stack.push(node.data);
-            }
-          }
-        }
-      }
-    }
-
     let currentParentId: number;
+
     for (let entry of projectRoadmaps) {
       currentParentId = entry.parent;
       while (currentParentId !== 0 && currentParentId !== undefined) {
@@ -224,7 +192,59 @@ export class ProjectRoadmapService {
         }
       }
     }
+  }
 
+  /**
+   * Push on the stack items that have data in a preorder visit where the top of the stack is what we visit first.
+   *
+   * @param roadmapTree the search result tree.
+   * @param stack the current stack.
+   */
+  private static pushPreorderStackOfDataNodes(roadmapTree:TreeNode<ProjectRoadmapTaskEntity, number>, stack: ProjectRoadmapTaskEntity[]):void {
+    let currentNode: TreeNode<ProjectRoadmapTaskEntity, number> | undefined;
+
+    // We will now walk the tree that is produced - Preorder walk.
+    if (!roadmapTree.isEmpty()) {
+      // Push all children on the stack only if data exists.
+      for (let x = roadmapTree.children.length - 1; x>=0; x--) {
+        currentNode = roadmapTree.children[x];
+        if (currentNode && currentNode.data) {
+          stack.push(currentNode.data);
+        }
+      }
+    }
+  }
+
+  /**
+   * Create the gantt chart
+   *
+   * @param asOf date to pull data from or undefined for today.
+   * @returns the tasks for the gantt chart
+   */
+  static async createGantt(asOf?: Date): Promise<ProjectRoadmapTaskEntity[]> {
+    const roadmapTree = await this.getRoadmaps(asOf);
+    const projectRoadmaps: ProjectRoadmapTaskEntity[] = [];
+    const stack: ProjectRoadmapTaskEntity[] = [];
+    let currentData: ProjectRoadmapTaskEntity | undefined;
+    let currentNode: TreeNode<ProjectRoadmapTaskEntity, number> | undefined;
+
+    // Add all the projects.
+    ProjectRoadmapService.pushPreorderStackOfDataNodes(roadmapTree, stack);
+
+    // Loop over the stack untl we finish walking the tree. - Preorder
+    while (stack.length > 0) {
+      currentData = stack.pop();
+      if (currentData) {
+        projectRoadmaps.push(currentData);
+        currentNode = roadmapTree.nodeMap?.get(currentData.id);
+        if (currentNode) {
+          // Add all children.
+          ProjectRoadmapService.pushPreorderStackOfDataNodes(currentNode, stack);
+        }
+      }
+    }
+
+    ProjectRoadmapService.associateWorkItemsToParents(roadmapTree, projectRoadmaps);
     ProjectRoadmapService.updateWorkItemProgress(roadmapTree);
     return projectRoadmaps;
   }

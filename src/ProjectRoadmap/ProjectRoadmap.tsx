@@ -191,6 +191,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    */
   private async refreshGantt(): Promise<void> {
     this.pageData.roadmap = await ProjectRoadmapService.createGantt(
+      // For future use to query historic roadmaps.
       this.pageData.asOf
     );
     this.filterRoadmap();
