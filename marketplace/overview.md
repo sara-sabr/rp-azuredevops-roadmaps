@@ -10,7 +10,7 @@
 
 ##  Setup Instructions
 1. Create Shared Search ```Automation\Roadmap\Latest```
-   - Search Query ![Search Query Settings for Latest Status Report](/docs/roadmap-latest-query.png)
+   - Search Query ![Roadmap Latest](/docs/roadmap-latest-query.png)
    - Click on Column Options and for Columns, choose the following:
       - ID
       - Work Item Type
