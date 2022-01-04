@@ -1,15 +1,15 @@
 # Azure DevOps Extension - Boards - IT Research and Prototyping Roadmaps
 
-[![Development](https://github.com/sara-sabr/rp-azuredevops-common/actions/workflows/development.yml/badge.svg)](https://github.com/sara-sabr/AzBoards-QoL-Automation/actions/workflows/development.yml)
-[![Production](https://github.com/sara-sabr/rp-azuredevops-common/actions/workflows/production.yml/badge.svg)](https://github.com/sara-sabr/AzBoards-QoL-Automation/actions/workflows/production.yml)
+[![Development](https://github.com/sara-sabr/rp-azuredevops-roadmaps/actions/workflows/development.yml/badge.svg)](https://github.com/sara-sabr/rp-azuredevops-roadmaps/actions/workflows/development.yml)
+[![Production](https://github.com/sara-sabr/rp-azuredevops-roadmapsactions/workflows/production.yml/badge.svg)](https://github.com/sara-sabr/rp-azuredevops-roadmaps/actions/workflows/production.yml)
 
 This Azure Boards extension provides roadmap capability for Epic > Feature > PBI.
 
 ## End User Project Configuration Requirements
 
 ### Create Required Shared Searches
-1. Create Shared Search ```Automation\Status Report\Latest Status Report```
-   - Search Query ![Search Query Settings for Latest Status Report](/docs/latest-status-report-query.png)
+1. Create Shared Search ```Automation\Roadmap\Latest```
+   - Search Query ![Search Query Settings for Latest Status Report](/docs/roadmap-latest-query.png)
    - Click on Column Options and for Columns, choose the following:
       - ID
       - Work Item Type
@@ -17,29 +17,13 @@ This Azure Boards extension provides roadmap capability for Epic > Feature > PBI
       - State
       - Assigned To
       - Start Date
-      - Due Date
       - Finish Date
-      - Description
-      - Action
-      - Risk
-      - Priority
+      - Closed Date
       - Parent
       - Area Path
+      - Description
    - Click on Column Options and for Sorting, choose the following:
-       - ID
-
-2. Create Shared Search ```Automation\Status Report\Impediments```
-   - Search Query ![Search Query Settings for Impediments](/docs/impediments-query.png)
-   - Click on Column Options and for Columns, choose the following:
-      - ID
-      - Work Item Type
-      - Title
-      - Assigned To
-      - State
-      - Parent
-   - Click on Column Options and for Sorting, choose the following:
-       - ID
-
+       - Backlog Priority
 
 ## Developer Prerequisites
 

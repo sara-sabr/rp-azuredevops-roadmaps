@@ -9,8 +9,8 @@
 > You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 ##  Setup Instructions
-1. Create Shared Search ```Automation\Roadmaps\Latest```
-   - Search Query ![Search Query Settings for Latest](/docs/latest-status-report-query.png)
+1. Create Shared Search ```Automation\Roadmap\Latest```
+   - Search Query ![Search Query Settings for Latest Status Report](/docs/roadmap-latest-query.png)
    - Click on Column Options and for Columns, choose the following:
       - ID
       - Work Item Type
@@ -18,25 +18,10 @@
       - State
       - Assigned To
       - Start Date
-      - Due Date
       - Finish Date
-      - Description
-      - Action
-      - Risk
-      - Priority
+      - Closed Date
       - Parent
       - Area Path
+      - Description
    - Click on Column Options and for Sorting, choose the following:
-       - ID
-
-2. Create Shared Search ```Automation\Status Report\Impediments```
-   - Search Query ![Search Query Settings for Impediments](/docs/impediments-query.png)
-   - Click on Column Options and for Columns, choose the following:
-      - ID
-      - Work Item Type
-      - Title
-      - Assigned To
-      - State
-      - Parent
-   - Click on Column Options and for Sorting, choose the following:
-       - ID
+       - Backlog Priority
