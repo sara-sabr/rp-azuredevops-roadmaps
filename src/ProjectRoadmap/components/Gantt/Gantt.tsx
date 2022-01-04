@@ -42,6 +42,8 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
 
     gantt.config.date_format = Gantt.DATE_FORMAT;
     gantt.config.show_unscheduled = true;
+    // Temp disable editting, we'll need to do api calls to update the items.
+    gantt.config.readonly = true;
     this.configureUI();
     this.configurePlugins();
     this.setScaleConfig(this.props.config.unit);
@@ -197,17 +199,40 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
     };
 
     gantt.templates.grid_folder = function(task: GanttTask) {
+      return _self.getSymbolClass(task.azureType);
+    };
 
-      switch (task.azureType) {
-        case Constants.WIT_TYPE_EPIC:
-          return "<div aria-label='Epic' class='work-item-type-icon bowtie-icon bowtie-symbol-crown' role='figure' style='color: rgb(255, 123, 0);'></div>";
-        case Constants.WIT_TYPE_FEATURE: return "feature";
-        case Constants.WIT_TYPE_PBI: return "pbi";
-        default:
-          return "";
-      }
+    gantt.templates.grid_file = function(task: GanttTask) {
+      return  _self.getSymbolClass(task.azureType);
     };
   }
+
+  /**
+   * Generate the visual "border" for the work item types.
+   * @param azureType the work item
+   * @returns the HTML to show the different types.
+   */
+  private getSymbolClass(azureType: string):string {
+    let extraClass = "";
+
+    switch (azureType) {
+      case Constants.WIT_TYPE_EPIC:
+        extraClass = "gantt-symbol-epic";
+        break;
+      case Constants.WIT_TYPE_FEATURE:
+        extraClass = "gantt-symbol-feature";
+        break;
+      case Constants.WIT_TYPE_PBI:
+        extraClass =  "gantt-symbol-pbi";
+        break;
+      default:
+        return "";
+    }
+
+    return "<div aria-label='Epic' class='gantt-symbol " + extraClass +  "' role='figure'></div>";
+  }
+
+
 
   /**
    * Return the suffix for a given task
