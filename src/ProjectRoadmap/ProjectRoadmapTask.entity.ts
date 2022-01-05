@@ -1,11 +1,10 @@
-import { TaskEnum } from "./Task.enum";
-import { WorkItemBaseEntity, Constants } from "@esdc-it-rp/azuredevops-common";
+import { WorkItemBaseWithPredecessor, Constants } from "@esdc-it-rp/azuredevops-common";
 import { WorkItem } from "azure-devops-extension-api/WorkItemTracking";
 
 /**
  * Represents a project/task/milestone.
  */
-export class ProjectRoadmapTaskEntity extends WorkItemBaseEntity {
+export class ProjectRoadmapTaskEntity extends WorkItemBaseWithPredecessor {
   /**
    * Start date.
    */
@@ -77,7 +76,7 @@ export class ProjectRoadmapTaskEntity extends WorkItemBaseEntity {
   public populateFromWorkItem(workItem: WorkItem): void {
     super.populateFromWorkItem(workItem);
     this.start = workItem.fields[Constants.WIT_FIELD_START_DATE];
-    this.end = workItem.fields[Constants.WIT_FIELD_FINISH_DATE];
+    this.end = workItem.fields[Constants.WIT_FIELD_TARGET_DATE];
     this.state = workItem.fields[Constants.WIT_FIELD_STATE];
     this.areaPath = workItem.fields[Constants.WIT_FIELD_AREA_PATH];
     this.description = workItem.fields[Constants.WIT_FIELD_DESCRIPTION];
