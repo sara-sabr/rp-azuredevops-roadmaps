@@ -266,10 +266,21 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    */
   private populateGantt(): void {
     const tasks: GanttTask[] = [];
+    const visibleIDs: string[] = [];
 
     this.pageData.roadmap.forEach((azureItem) => {
       if (!azureItem.hide) {
         tasks.push(GanttTask.convert(azureItem));
+        visibleIDs.push(azureItem.id.toString());
+      }
+    });
+
+    // Make sure all tasks do exist (if hidden, we need to remove parent/relationship).
+    tasks.forEach((item) => {
+      if (item.parent) {
+        if (visibleIDs.indexOf(item.parent) === -1) {
+          item.parent = undefined;
+        }
       }
     });
 
