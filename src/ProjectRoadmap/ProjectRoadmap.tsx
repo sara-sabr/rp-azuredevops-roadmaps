@@ -27,17 +27,19 @@ import { ProjectRoadmapCommandMenu } from "./ProjectRoadmapCommandMenu.ui";
 import { IProjectRoadmap } from "./IProjectRoadmap.state";
 import { Spinner, SpinnerSize } from "azure-devops-ui/Spinner";
 import { ObservableValue } from "azure-devops-ui/Core/Observable";
-import { DropdownMultiSelection } from "azure-devops-ui/Utilities/DropdownSelection";
+import { DropdownMultiSelection, DropdownSelection } from "azure-devops-ui/Utilities/DropdownSelection";
 import { DropdownFilterBarItem } from "azure-devops-ui/Dropdown";
 import { ProjectRoadmapService } from "./ProjectRoadmap.service";
 import { IMenuItem } from "azure-devops-ui/Menu";
 import { IListBoxItem } from "azure-devops-ui/ListBox";
 import { ZeroData } from "azure-devops-ui/ZeroData";
 
-import { ProjectService } from "@esdc-it-rp/azuredevops-common";
+import { Constants, ProjectService } from "@esdc-it-rp/azuredevops-common";
 import Gantt from "./components/Gantt/Gantt";
 import { GanttTask } from "./components/Gantt/GanttTask";
 import { DisplayInterval } from "./DisplayInterval.enum";
+import { GanttLink } from "./components/Gantt/GanttLink";
+
 /**
  * The status report page.
  */
@@ -67,7 +69,12 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   /**
    * Filter for Area Path.
    */
-  private filterAreaPath = new DropdownMultiSelection();
+   private filterAreaPath = new DropdownMultiSelection();
+
+  /**
+   * Filter for Work Item Type.
+   */
+   private filterWorkItemGranularity = new DropdownSelection();
 
   /**
    * Current page data being used by react.
@@ -88,6 +95,11 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    * @see https://reactjs.org/blog/2018/06/07/you-probably-dont-need-derived-state.html
    */
   private forceRefreshFlipper: number = 0;
+
+  /**
+   * Visible work item types.
+   */
+  private visibleWorkItemTypes = [Constants.WIT_TYPE_EPIC, Constants.WIT_TYPE_FEATURE, Constants.WIT_TYPE_PBI, Constants.WIT_TYPE_TASK];
 
   /**
    * Constructor
@@ -133,7 +145,14 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     that.filter.setFilterItemState("areaPath", {
       value: [],
       operator: FilterOperatorType.and,
-    });
+    },
+  );
+
+    that.filter.setFilterItemState("displayGranularity", {
+        value: []
+      },
+    );
+
     that.filter.subscribe(() => {
       this.currentFilterState.value = JSON.stringify(
         this.filter.getState(),
@@ -157,15 +176,27 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     const visibleLevel: string =
       this.filter.getFilterItemState("displayGranularity")?.value;
 
+    const hiddenTypes:string[] = [];
+
+    // Intentionally no break here.
+    switch(visibleLevel[0]) {
+      case Constants.WIT_TYPE_EPIC:
+        hiddenTypes.push(Constants.WIT_TYPE_FEATURE);
+      case Constants.WIT_TYPE_FEATURE:
+        hiddenTypes.push(Constants.WIT_TYPE_PBI);
+      case Constants.WIT_TYPE_PBI:
+        hiddenTypes.push(Constants.WIT_TYPE_TASK);
+    }
+
     if (areaPaths.length === 0) {
       this.pageData.roadmap.forEach((entry) => {
-        entry.hide = false;
+        entry.hide = hiddenTypes.indexOf(entry.type) != -1;
       });
     } else {
       let topArea: string;
       this.pageData.roadmap.forEach((entry) => {
         topArea = ProjectRoadmapService.getTopLevelAreaPath(entry.areaPath);
-        entry.hide = areaPaths.indexOf(topArea) === -1;
+        entry.hide = areaPaths.indexOf(topArea) === -1 || hiddenTypes.indexOf(entry.type) != -1;
       });
     }
     this.populateGantt();
@@ -228,6 +259,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     this.projectName = await ProjectService.getProjectName();
     await this.populateAreaPath();
     await this.refreshGantt();
+    Gantt.toggleOpenAll(false);
   }
 
   /**
@@ -266,16 +298,19 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    */
   private populateGantt(): void {
     const tasks: GanttTask[] = [];
+    const allLinks: GanttLink[] = [];
+    const visibleLinks: GanttLink[] = [];
     const visibleIDs: string[] = [];
 
     this.pageData.roadmap.forEach((azureItem) => {
       if (!azureItem.hide) {
         tasks.push(GanttTask.convert(azureItem));
+        allLinks.push(... GanttLink.convert(azureItem));
         visibleIDs.push(azureItem.id.toString());
       }
     });
 
-    // Make sure all tasks do exist (if hidden, we need to remove parent/relationship).
+    // Make sure all tasks do exist (if hidden, we need to remove parent).
     tasks.forEach((item) => {
       if (item.parent) {
         if (visibleIDs.indexOf(item.parent) === -1) {
@@ -284,7 +319,15 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
       }
     });
 
+    // Make sure all references do exist (if hidden, we need to remove relationship).
+    allLinks.forEach((item) => {
+      if (visibleIDs.indexOf(item.source) != -1 && visibleIDs.indexOf(item.target) != -1) {
+        visibleLinks.push(item);
+      }
+    });
+
     this.pageData.ganttConfig.data.tasks = tasks;
+    this.pageData.ganttConfig.data.links = visibleLinks;
   }
 
   public render(): JSX.Element {
@@ -316,6 +359,13 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
             this.state.roadmap.length > 0 && (
               <div className="flex-grow">
                 <FilterBar filter={this.filter}>
+                  <DropdownFilterBarItem
+                    filterItemKey="displayGranularity"
+                    filter={this.filter}
+                    items={this.visibleWorkItemTypes}
+                    selection={this.filterWorkItemGranularity}
+                    placeholder="Granularity"
+                  />
                   <DropdownFilterBarItem
                     filterItemKey="areaPath"
                     filter={this.filter}

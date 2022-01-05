@@ -5,8 +5,6 @@ export enum DisplayInterval {
   Week,
   /** Display Gantt chart in two week intvervals starting on Monday. */
   "Bi-Weekly",
-  /** Display Gantt chart in intervals of Sprint durations. */
-  Sprint,
   /** Display Gantt chart in intervals of months. */
   Month,
   /** Display Gantt chart in intervals of fiscal quarters. */

@@ -50,6 +50,18 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
   }
 
   /**
+   * Toggle open and close of tree nodes.
+   *
+   * @param open true to expand all, otherwise false to collapse all.
+   */
+  public static toggleOpenAll(open: boolean) {
+    gantt.eachTask(function(task){
+      task.$open = open;
+    });
+    gantt.render();
+  }
+
+  /**
    * Configure Gantt plugins.
    */
   private configurePlugins(): void {
@@ -86,7 +98,7 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
           Gantt.DATE_TO_STR(start) +
           "<br/><b>" +
           (task.calculatedDates ? "Calculated " : "") +
-          "End:</b> " +
+          "Target:</b> " +
           Gantt.DATE_TO_STR(end) +
           "<br/>";
       }
@@ -173,7 +185,7 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
       { name: "id", label: "ID", width: "50" },
       { name: "text", label: "Title", width: "*", tree: true },
       { name: "start_date", label: "Start Date", align: "center", width: 100 },
-      { name: "end_date", label: "End Date", align: "center", width: 100 },
+      { name: "end_date", label: "Target Date", align: "center", width: 100 },
     ];
 
     // Timeline tasks display.
@@ -232,8 +244,6 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
     return "<div aria-label='Epic' class='gantt-symbol " + extraClass +  "' role='figure'></div>";
   }
 
-
-
   /**
    * Return the suffix for a given task
    *
@@ -288,22 +298,6 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
         gantt.config.scale_height = 50;
         break;
       case DisplayInterval["Bi-Weekly"]:
-        var weekScaleTemplate = function (date: Date) {
-          var dateToStr = gantt.date.date_to_str("%d %M");
-          var endDate = gantt.date.add(
-            gantt.date.add(date, 2, "week"),
-            -1,
-            "day"
-          );
-          return dateToStr(date) + " - " + dateToStr(endDate);
-        };
-        gantt.config.scales = [
-          { unit: "week", step: 2, format: weekScaleTemplate },
-          { unit: "day", step: 1, format: "%D" },
-        ];
-        gantt.config.scale_height = 50;
-        break;
-      case DisplayInterval.Sprint:
         var weekScaleTemplate = function (date: Date) {
           var dateToStr = gantt.date.date_to_str("%d %M");
           var endDate = gantt.date.add(
