@@ -222,6 +222,9 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
 
     // Interval change.
     this.commandButtons.attachOnIntervalActivate(this.changeInterval);
+
+    // Expand and Collpase change.
+    this.commandButtons.attachOnExpandCollapseActivate(this.performExpandOrCollapseAll);
   }
 
   /**
@@ -257,6 +260,19 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    */
   public componentDidMount() {
     this.performMountAsync();
+  }
+
+
+  /**
+   * User choose to change interval.
+   *
+   * @param menuItem the menu item that was selected.
+   * @param event the event that caused the action
+   */
+  private performExpandOrCollapseAll(
+    menuItem: IMenuItem,
+    event?: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>):void {
+      Gantt.toggleOpenAll(menuItem.data);
   }
 
   /**
