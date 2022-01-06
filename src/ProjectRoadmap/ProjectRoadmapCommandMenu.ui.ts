@@ -26,6 +26,30 @@ export class ProjectRoadmapCommandMenu {
   };
 
   /**
+   * Collapse button.
+   */
+   private collapseButton: IHeaderCommandBarItem = {
+    iconProps: {
+      iconName: "ZoomOut",
+    },
+    id: "itrp-pm-roadmap-header-collapse",
+    text: "Collapse All",
+    data: false
+  };
+
+  /**
+   * Collapse button.
+  */
+  private expandButton: IHeaderCommandBarItem = {
+      iconProps: {
+        iconName: "ZoomIn",
+      },
+      id: "itrp-pm-roadmap-header-expand",
+      text: "Expand All",
+      data: true
+  };
+
+  /**
    * Interval button options.
    */
   private intervalOptionItems: IMenuItem[];
@@ -41,6 +65,8 @@ export class ProjectRoadmapCommandMenu {
 
   /** Used to trigger update. */
   buttons: ObservableValue<IHeaderCommandBarItem[]> = new ObservableValue([
+    this.expandButton,
+    this.collapseButton,
     this.intervalButton,
     this.refreshButton,
   ]);
@@ -114,6 +140,21 @@ export class ProjectRoadmapCommandMenu {
     ) => boolean | void
   ): void {
     this.refreshButton.onActivate = event;
+  }
+
+  /**
+   * Attach the event to expand or collapse button click.
+   *
+   * @param event event to fire
+   */
+   public attachOnExpandCollapseActivate(
+    event: (
+      menuItem: IMenuItem,
+      event?: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
+    ) => boolean | void
+  ): void {
+    this.collapseButton.onActivate = event;
+    this.expandButton.onActivate = event;
   }
 
   /**
