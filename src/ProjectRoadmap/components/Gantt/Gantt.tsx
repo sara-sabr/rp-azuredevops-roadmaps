@@ -222,7 +222,7 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
     ) {
       let styleClasses = "gantt-" + _self.getTaskSuffixClass(task);
 
-      if (task.state !== Constants.WIT_STATE_IN_PROGRESS || Constants.WIT_STATE_DONE) {
+      if (task.state !== Constants.WIT_STATE_IN_PROGRESS && task.state !== Constants.WIT_STATE_DONE) {
         styleClasses += " gantt-estimated";
       }
 
