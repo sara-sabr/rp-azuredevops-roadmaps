@@ -55,7 +55,7 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
    * @param open true to expand all, otherwise false to collapse all.
    */
   public static toggleOpenAll(open: boolean) {
-    gantt.eachTask(function(task){
+    gantt.eachTask(function (task) {
       task.$open = open;
     });
     gantt.render();
@@ -116,7 +116,8 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
     gantt.templates.quick_info_content = function (
       start: Date,
       end: Date,
-      task: GanttTask) {
+      task: GanttTask
+    ) {
       return task.description;
     };
   }
@@ -192,30 +193,33 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
     gantt.templates.rightside_text = function (
       start: Date,
       end: Date,
-      task: GanttTask) {
+      task: GanttTask
+    ) {
       return task.text;
     };
 
     gantt.templates.task_text = function (
       start: Date,
       end: Date,
-      task: GanttTask) {
+      task: GanttTask
+    ) {
       return "";
     };
 
     gantt.templates.task_class = function (
       start: Date,
       end: Date,
-      task: GanttTask) {
-        return "gantt-" + _self.getTaskSuffixClass(task);
+      task: GanttTask
+    ) {
+      return "gantt-" + _self.getTaskSuffixClass(task);
     };
 
-    gantt.templates.grid_folder = function(task: GanttTask) {
+    gantt.templates.grid_folder = function (task: GanttTask) {
       return _self.getSymbolClass(task.azureType);
     };
 
-    gantt.templates.grid_file = function(task: GanttTask) {
-      return  _self.getSymbolClass(task.azureType);
+    gantt.templates.grid_file = function (task: GanttTask) {
+      return _self.getSymbolClass(task.azureType);
     };
   }
 
@@ -224,7 +228,7 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
    * @param azureType the work item
    * @returns the HTML to show the different types.
    */
-  private getSymbolClass(azureType: string):string {
+  private getSymbolClass(azureType: string): string {
     let extraClass = "";
 
     switch (azureType) {
@@ -235,13 +239,17 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
         extraClass = "gantt-symbol-feature";
         break;
       case Constants.WIT_TYPE_PBI:
-        extraClass =  "gantt-symbol-pbi";
+        extraClass = "gantt-symbol-pbi";
         break;
       default:
         return "";
     }
 
-    return "<div aria-label='Epic' class='gantt-symbol " + extraClass +  "' role='figure'></div>";
+    return (
+      "<div aria-label='Epic' class='gantt-symbol " +
+      extraClass +
+      "' role='figure'></div>"
+    );
   }
 
   /**
@@ -250,11 +258,14 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
    * @param task the task
    * @returns the suffix for the given task.
    */
-  private getTaskSuffixClass(task: GanttTask):string {
+  private getTaskSuffixClass(task: GanttTask): string {
     switch (task.azureType) {
-      case Constants.WIT_TYPE_EPIC: return "epic";
-      case Constants.WIT_TYPE_FEATURE: return "feature";
-      case Constants.WIT_TYPE_PBI: return "pbi";
+      case Constants.WIT_TYPE_EPIC:
+        return "epic";
+      case Constants.WIT_TYPE_FEATURE:
+        return "feature";
+      case Constants.WIT_TYPE_PBI:
+        return "pbi";
       default:
         return "";
     }

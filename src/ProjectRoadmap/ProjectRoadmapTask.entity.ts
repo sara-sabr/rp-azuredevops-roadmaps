@@ -1,4 +1,7 @@
-import { WorkItemBaseWithPredecessor, Constants } from "@esdc-it-rp/azuredevops-common";
+import {
+  WorkItemBaseWithPredecessor,
+  Constants,
+} from "@esdc-it-rp/azuredevops-common";
 import { WorkItem } from "azure-devops-extension-api/WorkItemTracking";
 
 /**
@@ -71,6 +74,11 @@ export class ProjectRoadmapTaskEntity extends WorkItemBaseWithPredecessor {
   calculatedDates: boolean = false;
 
   /**
+   * The iteration assigned to this item.
+   */
+  iterationPath: string = "";
+
+  /**
    * @inheritdoc
    */
   public populateFromWorkItem(workItem: WorkItem): void {
@@ -80,5 +88,7 @@ export class ProjectRoadmapTaskEntity extends WorkItemBaseWithPredecessor {
     this.state = workItem.fields[Constants.WIT_FIELD_STATE];
     this.areaPath = workItem.fields[Constants.WIT_FIELD_AREA_PATH];
     this.description = workItem.fields[Constants.WIT_FIELD_DESCRIPTION];
+    this.iterationPath = workItem.fields[Constants.WIT_FIELD_ITERATION_PATH];
+    console.log(this.iterationPath);
   }
 }
