@@ -5,6 +5,8 @@ import {
 
 import {
   CommonRepositories,
+  Constants,
+  ProjectCacheService,
   ProjectService,
   SearchRepository,
   SearchResultEntity,
@@ -84,10 +86,17 @@ export class ProjectRoadmapService {
     node: SearchResultEntity<ProjectRoadmapTaskEntity, number>,
     result: ProjectRoadmapTaskEntity[]
   ): void {
-    if (node === undefined) return;
-    for (const child of node.children)
+    if (node === undefined) {
+      return;
+    }
+
+    for (const child of node.children) {
       ProjectRoadmapService.traverse(child, result);
-    if (node.data) result.push(node.data);
+    }
+
+    if (node.data) {
+      result.push(node.data);
+    }
   }
 
   /**
@@ -96,17 +105,15 @@ export class ProjectRoadmapService {
    * @param roadmapTree the tree structure of the work items.
    * @returns ordered tasks with a populated progress percent.
    */
-  static updateWorkItemProgress(
+  static async updateWorkItemProgress(
     roadmapTree: SearchResultEntity<ProjectRoadmapTaskEntity, number>
-  ): ProjectRoadmapTaskEntity[] {
+  ): Promise<ProjectRoadmapTaskEntity[]> {
     const result: ProjectRoadmapTaskEntity[] = [];
-
-    ProjectRoadmapService.traverse(roadmapTree, result);
-
     let workItem: ProjectRoadmapTaskEntity;
     let calculatedProgress: number;
-    let startDate: Date | undefined;
-    let endDate: Date | undefined;
+    const iterationCache = await ProjectCacheService.getProjectIterations();
+
+    ProjectRoadmapService.traverse(roadmapTree, result);
 
     for (var i = 0; i <= result.length; i++) {
       workItem = result[i];
@@ -120,26 +127,26 @@ export class ProjectRoadmapService {
 
         // Calculate the progress for the work item.
         if (currentNode.isLeaf()) {
-          if (workItem.state === "Done") {
+          if (workItem.state === Constants.WIT_STATE_DONE) {
             calculatedProgress = 100;
           }
         } else {
-          startDate = undefined;
-          endDate = undefined;
-
           currentNode.children.forEach((child) => {
             if (child.data) {
               if (
-                startDate === undefined ||
-                (child.data.start && child.data.start < startDate)
+                workItem.start === undefined ||
+                (child.data.start && child.data.start < workItem.start)
               ) {
-                startDate = child.data.start;
+                workItem.start = child.data.start;
+                workItem.calculatedStart = true;
               }
+
               if (
-                endDate === undefined ||
-                (child.data.end && child.data.end > endDate)
+                workItem.end === undefined ||
+                (child.data.end && child.data.end > workItem.end)
               ) {
-                endDate = child.data.end;
+                workItem.end = child.data.end;
+                workItem.calculatedEnd = true;
               }
 
               // If no progress set, set to 0
@@ -148,20 +155,28 @@ export class ProjectRoadmapService {
                 : 0;
             }
           });
+
           calculatedProgress /= currentNode.totalChildren();
-
-          if (startDate && workItem.start === undefined) {
-            workItem.start = startDate;
-            workItem.calculatedDates = true;
-          }
-
-          if (endDate && workItem.end === undefined) {
-            workItem.end = endDate;
-            workItem.calculatedDates = true;
-          }
         }
 
         workItem.progress = calculatedProgress;
+
+        // At this point, it start and end date are still null, try and defer it to the iteation path.
+        if (workItem.start === undefined) {
+          workItem.start = iterationCache.get(workItem.iterationPath)?.attributes?.startDate;
+
+          if (workItem.start) {
+            workItem.calculatedStart = false;
+          }
+        }
+
+        if (workItem.end === undefined) {
+          workItem.end = iterationCache.get(workItem.iterationPath)?.attributes?.finishDate;
+
+          if (workItem.end) {
+            workItem.calculatedEnd = false;
+          }
+        }
       }
     }
 
@@ -174,9 +189,10 @@ export class ProjectRoadmapService {
    * @param roadmapTree the tree of search results.
    * @param projectRoadmaps the current working roadmap data.
    */
-  private static associateWorkItemsToParents(roadmapTree:SearchResultEntity<ProjectRoadmapTaskEntity, number>,
-    projectRoadmaps: ProjectRoadmapTaskEntity[]):void {
-
+  private static associateWorkItemsToParents(
+    roadmapTree: SearchResultEntity<ProjectRoadmapTaskEntity, number>,
+    projectRoadmaps: ProjectRoadmapTaskEntity[]
+  ): void {
     let currentNode: TreeNode<ProjectRoadmapTaskEntity, number> | undefined;
     let currentParentId: number;
 
@@ -200,13 +216,16 @@ export class ProjectRoadmapService {
    * @param roadmapTree the search result tree.
    * @param stack the current stack.
    */
-  private static pushPreorderStackOfDataNodes(roadmapTree:TreeNode<ProjectRoadmapTaskEntity, number>, stack: ProjectRoadmapTaskEntity[]):void {
+  private static pushPreorderStackOfDataNodes(
+    roadmapTree: TreeNode<ProjectRoadmapTaskEntity, number>,
+    stack: ProjectRoadmapTaskEntity[]
+  ): void {
     let currentNode: TreeNode<ProjectRoadmapTaskEntity, number> | undefined;
 
     // We will now walk the tree that is produced - Preorder walk.
     if (!roadmapTree.isEmpty()) {
       // Push all children on the stack only if data exists.
-      for (let x = roadmapTree.children.length - 1; x>=0; x--) {
+      for (let x = roadmapTree.children.length - 1; x >= 0; x--) {
         currentNode = roadmapTree.children[x];
         if (currentNode && currentNode.data) {
           stack.push(currentNode.data);
@@ -239,13 +258,19 @@ export class ProjectRoadmapService {
         currentNode = roadmapTree.nodeMap?.get(currentData.id);
         if (currentNode) {
           // Add all children.
-          ProjectRoadmapService.pushPreorderStackOfDataNodes(currentNode, stack);
+          ProjectRoadmapService.pushPreorderStackOfDataNodes(
+            currentNode,
+            stack
+          );
         }
       }
     }
 
-    ProjectRoadmapService.associateWorkItemsToParents(roadmapTree, projectRoadmaps);
-    ProjectRoadmapService.updateWorkItemProgress(roadmapTree);
+    ProjectRoadmapService.associateWorkItemsToParents(
+      roadmapTree,
+      projectRoadmaps
+    );
+    await ProjectRoadmapService.updateWorkItemProgress(roadmapTree);
     return projectRoadmaps;
   }
 }

@@ -76,9 +76,19 @@ export class GanttTask {
   forcast: boolean = false;
 
   /**
-   * Current task didn't have a start/end date defined, therefore this becomes derived.
+   * Current task didn't have a start date defined, therefore this becomes derived.
    */
-  calculatedDates: boolean = false;
+   calculatedStart: boolean = false;
+
+   /**
+    * Current task didn't have an end date defined, therefore this becomes derived.
+    */
+   calculatedEnd: boolean = false;
+
+   /**
+    * Current task state.
+    */
+   state: string = "";
 
   /**
    * Convert a ProjectRoadmapTaskEntity information to a Gantt Task.
@@ -95,7 +105,9 @@ export class GanttTask {
     instance.progress = entity.progress / 100;
     instance.description = entity.description;
     instance.forcast = entity.forcast;
-    instance.calculatedDates = entity.calculatedDates;
+    instance.calculatedStart = entity.calculatedStart;
+    instance.calculatedEnd = entity.calculatedEnd;
+    instance.state = entity.state;
 
     if (entity.start && entity.end) {
       instance.start_date = Gantt.DATE_TO_STR(entity.start);

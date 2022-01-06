@@ -69,9 +69,14 @@ export class ProjectRoadmapTaskEntity extends WorkItemBaseWithPredecessor {
   forcast: boolean = false;
 
   /**
-   * Current task didn't have a start/end date defined, therefore this becomes derived.
+   * Current task didn't have a start date defined, therefore this becomes derived.
    */
-  calculatedDates: boolean = false;
+  calculatedStart: boolean = false;
+
+  /**
+   * Current task didn't have an end date defined, therefore this becomes derived.
+   */
+  calculatedEnd: boolean = false;
 
   /**
    * The iteration assigned to this item.
@@ -89,6 +94,5 @@ export class ProjectRoadmapTaskEntity extends WorkItemBaseWithPredecessor {
     this.areaPath = workItem.fields[Constants.WIT_FIELD_AREA_PATH];
     this.description = workItem.fields[Constants.WIT_FIELD_DESCRIPTION];
     this.iterationPath = workItem.fields[Constants.WIT_FIELD_ITERATION_PATH];
-    console.log(this.iterationPath);
   }
 }

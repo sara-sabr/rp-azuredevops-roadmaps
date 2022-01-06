@@ -83,7 +83,8 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
       end: Date,
       task: GanttTask
     ) {
-      let buildStr = "<b>Title:</b> " + task.text + "<br/>";
+      let buildStr = "<b>Title:</b> " + task.text + "<br/><b>State:</b> " +
+      task.state + "<br/>";
 
       if (task.unscheduled) {
         buildStr += "<b>Progress:</b> Unplanned<br/>";
@@ -93,14 +94,14 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
           Math.round(task.progress * 100) +
           "%<br/>" +
           "<b>" +
-          (task.calculatedDates ? "Calculated " : "") +
+          (task.calculatedStart ? "Estimated " : "") +
           "Start:</b> " +
           Gantt.DATE_TO_STR(start) +
           "<br/><b>" +
-          (task.calculatedDates ? "Calculated " : "") +
+          (task.calculatedEnd ? "Estimated " : "") +
           "Target:</b> " +
           Gantt.DATE_TO_STR(end) +
-          "<br/>";
+          "<br/>"
       }
 
       return buildStr;
@@ -113,12 +114,20 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
       _self.openWorkitem(id);
       return false; //blocks the default behavior
     };
+
+    gantt.templates.quick_info_date = function(
+      start: Date,
+      end: Date,
+      task: GanttTask){
+      return Gantt.DATE_TO_STR(start) + " - " + Gantt.DATE_TO_STR(end);
+    };
+
     gantt.templates.quick_info_content = function (
       start: Date,
       end: Date,
       task: GanttTask
     ) {
-      return task.description;
+      return '<div class="gantt-qi-description">' + (task.description ? task.description : "") + '</div>';
     };
   }
 
@@ -211,7 +220,13 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
       end: Date,
       task: GanttTask
     ) {
-      return "gantt-" + _self.getTaskSuffixClass(task);
+      let styleClasses = "gantt-" + _self.getTaskSuffixClass(task);
+
+      if (task.state !== Constants.WIT_STATE_IN_PROGRESS || Constants.WIT_STATE_DONE) {
+        styleClasses += " gantt-estimated";
+      }
+
+      return styleClasses;
     };
 
     gantt.templates.grid_folder = function (task: GanttTask) {
