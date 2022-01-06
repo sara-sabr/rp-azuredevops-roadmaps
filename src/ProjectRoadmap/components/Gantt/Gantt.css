@@ -2,15 +2,26 @@
     height: 100%;
 }
 
+/**
+ * Quick Info
+ */
 .gantt_cal_qi_content li {
     list-style: inherit;
 }
 
-.gantt-epic {
-    background-color: #ffc266;
-    border: 1px solid #e68a00;
+.gantt_cal_quick_info {
+    width: 550px;
 }
 
+div.gantt-qi-description {
+    max-width: 540px;
+    max-height: 300px;
+    overflow: auto;
+}
+
+/**
+ * Gantt Table
+ */
 .gantt-symbol {
     content: "";
     padding-right: 5px;
@@ -29,15 +40,31 @@
     background-color: #3db9d3;
 }
 
+/**
+ * Gantt Chart
+ */
+.gantt-estimated {
+    border-style: dashed !important;
+}
+
+.gantt-epic {
+    background-color: #ffc266;
+    border: 3px solid #e68a00;
+}
+
 .gantt-epic .gantt_task_progress {
     background-color: #ffa31a;
 }
 
 .gantt-feature {
     background-color: #e699ff;
-    border: 1px solid #8600b3;
+    border: 3px solid #8600b3;
 }
 
 .gantt-feature .gantt_task_progress {
     background-color: #ac00e6;
+}
+
+.gantt-pbi {
+    border-width: 3px;
 }

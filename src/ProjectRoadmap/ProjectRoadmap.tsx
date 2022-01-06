@@ -27,7 +27,10 @@ import { ProjectRoadmapCommandMenu } from "./ProjectRoadmapCommandMenu.ui";
 import { IProjectRoadmap } from "./IProjectRoadmap.state";
 import { Spinner, SpinnerSize } from "azure-devops-ui/Spinner";
 import { ObservableValue } from "azure-devops-ui/Core/Observable";
-import { DropdownMultiSelection, DropdownSelection } from "azure-devops-ui/Utilities/DropdownSelection";
+import {
+  DropdownMultiSelection,
+  DropdownSelection,
+} from "azure-devops-ui/Utilities/DropdownSelection";
 import { DropdownFilterBarItem } from "azure-devops-ui/Dropdown";
 import { ProjectRoadmapService } from "./ProjectRoadmap.service";
 import { IMenuItem } from "azure-devops-ui/Menu";
@@ -69,12 +72,12 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   /**
    * Filter for Area Path.
    */
-   private filterAreaPath = new DropdownMultiSelection();
+  private filterAreaPath = new DropdownMultiSelection();
 
   /**
    * Filter for Work Item Type.
    */
-   private filterWorkItemGranularity = new DropdownSelection();
+  private filterWorkItemGranularity = new DropdownSelection();
 
   /**
    * Current page data being used by react.
@@ -99,7 +102,12 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   /**
    * Visible work item types.
    */
-  private visibleWorkItemTypes = [Constants.WIT_TYPE_EPIC, Constants.WIT_TYPE_FEATURE, Constants.WIT_TYPE_PBI, Constants.WIT_TYPE_TASK];
+  private visibleWorkItemTypes = [
+    Constants.WIT_TYPE_EPIC,
+    Constants.WIT_TYPE_FEATURE,
+    Constants.WIT_TYPE_PBI,
+    Constants.WIT_TYPE_TASK,
+  ];
 
   /**
    * Constructor
@@ -145,13 +153,11 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     that.filter.setFilterItemState("areaPath", {
       value: [],
       operator: FilterOperatorType.and,
-    },
-  );
+    });
 
     that.filter.setFilterItemState("displayGranularity", {
-        value: []
-      },
-    );
+      value: [],
+    });
 
     that.filter.subscribe(() => {
       this.currentFilterState.value = JSON.stringify(
@@ -176,10 +182,10 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     const visibleLevel: string =
       this.filter.getFilterItemState("displayGranularity")?.value;
 
-    const hiddenTypes:string[] = [];
+    const hiddenTypes: string[] = [];
 
     // Intentionally no break here.
-    switch(visibleLevel[0]) {
+    switch (visibleLevel[0]) {
       case Constants.WIT_TYPE_EPIC:
         hiddenTypes.push(Constants.WIT_TYPE_FEATURE);
       case Constants.WIT_TYPE_FEATURE:
@@ -196,7 +202,9 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
       let topArea: string;
       this.pageData.roadmap.forEach((entry) => {
         topArea = ProjectRoadmapService.getTopLevelAreaPath(entry.areaPath);
-        entry.hide = areaPaths.indexOf(topArea) === -1 || hiddenTypes.indexOf(entry.type) != -1;
+        entry.hide =
+          areaPaths.indexOf(topArea) === -1 ||
+          hiddenTypes.indexOf(entry.type) != -1;
       });
     }
     this.populateGantt();
@@ -305,7 +313,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     this.pageData.roadmap.forEach((azureItem) => {
       if (!azureItem.hide) {
         tasks.push(GanttTask.convert(azureItem));
-        allLinks.push(... GanttLink.convert(azureItem));
+        allLinks.push(...GanttLink.convert(azureItem));
         visibleIDs.push(azureItem.id.toString());
       }
     });
@@ -321,7 +329,10 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
 
     // Make sure all references do exist (if hidden, we need to remove relationship).
     allLinks.forEach((item) => {
-      if (visibleIDs.indexOf(item.source) != -1 && visibleIDs.indexOf(item.target) != -1) {
+      if (
+        visibleIDs.indexOf(item.source) != -1 &&
+        visibleIDs.indexOf(item.target) != -1
+      ) {
         visibleLinks.push(item);
       }
     });
@@ -341,7 +352,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
               </HeaderTitle>
             </HeaderTitleRow>
           </HeaderTitleArea>
-          <HeaderCommandBar items={this.commandButtons.buttons.value}  />
+          <HeaderCommandBar items={this.commandButtons.buttons.value} />
         </CustomHeader>
         <div className="page-content-left page-content-right page-content-top">
           {

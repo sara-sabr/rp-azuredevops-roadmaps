@@ -35,9 +35,9 @@ export class GanttLink {
    */
   public static convert(entity: ProjectRoadmapTaskEntity): GanttLink[] {
     const relations: GanttLink[] = [];
-    let r:GanttLink;
+    let r: GanttLink;
 
-    if (entity.predecessor  && entity.predecessor.length > 0) {
+    if (entity.predecessor && entity.predecessor.length > 0) {
       for (let predcessor of entity.predecessor) {
         r = new GanttLink();
         r.id = predcessor + "-" + entity.id;

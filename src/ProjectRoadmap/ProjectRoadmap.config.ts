@@ -10,7 +10,7 @@ export class ProjectRoadmapConfig {
    *
    * @returns the name of the query.
    */
-   public static getQueryForLatest(): string {
+  public static getQueryForLatest(): string {
     return SearchRepository.buildQueryFQN(
       Constants.DEFAULT_QUERIES_SHARED_FOLDER,
       Constants.DEFAULT_QUERIES_EXTENSION_FOLDER,
