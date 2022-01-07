@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Button } from "azure-devops-ui/Button";
 import { Component } from "react";
 import { gantt } from "dhtmlx-gantt";
 import "dhtmlx-gantt/codebase/dhtmlxgantt.css";
@@ -7,6 +8,8 @@ import { IGanttConfig } from "./IGantt.config";
 import { DisplayInterval } from "../../DisplayInterval.enum";
 import { Constants, ProjectService } from "@esdc-it-rp/azuredevops-common";
 import { GanttTask } from "./GanttTask";
+import { TextField, TextFieldWidth } from "azure-devops-ui/TextField";
+
 
 /**
  * Gantt component leveraging dhtmlxGantt which is an open source JavaScript
@@ -15,7 +18,11 @@ import { GanttTask } from "./GanttTask";
  * @see https://github.com/DHTMLX/gantt
  * @see https://docs.dhtmlx.com/gantt/
  */
-export default class Gantt extends Component<{ config: IGanttConfig }> {
+
+export default class Gantt extends Component<
+  { config: IGanttConfig },
+  { findId: string }
+> {
   /**
    * The expected format of the date.
    */
@@ -33,20 +40,41 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
   private ganttContainer: HTMLElement | null = null;
 
   /**
+   * The ID requesting focus.
+   */
+  private focusSearchId: string = "";
+
+  /**
    * Constructor.
    *
    * @param props props being sent in.
    */
   constructor(props: { config: IGanttConfig }) {
     super(props);
+    this.state = {
+      findId: this.focusSearchId,
+    };
 
     gantt.config.date_format = Gantt.DATE_FORMAT;
     gantt.config.show_unscheduled = true;
+    gantt.config.show_errors = false;
+    gantt.config.currentUnit = this.props.config.unit;
+
     // Temp disable editting, we'll need to do api calls to update the items.
     gantt.config.readonly = true;
+
     this.configureUI();
     this.configurePlugins();
     this.setScaleConfig(this.props.config.unit);
+  }
+
+  public toggleGrid(visible: boolean): void {
+    if (this.ganttContainer) {
+      gantt.config.layout = visible
+        ? gantt.config.layout_full
+        : gantt.config.layout_ganttonly;
+      gantt.init(this.ganttContainer);
+    }
   }
 
   /**
@@ -54,11 +82,38 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
    *
    * @param open true to expand all, otherwise false to collapse all.
    */
-  public static toggleOpenAll(open: boolean) {
+  public toggleOpenAll(open: boolean): void {
     gantt.eachTask(function (task) {
       task.$open = open;
     });
     gantt.render();
+  }
+
+  /**
+   * Select a task and give it focus.
+   *
+   * @param event the event fired.
+   * @param id the task ID to focus on.
+   */
+  public selectTask(
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    id: string
+  ): void {
+    this.focusSearchId = id;
+    let parentId: string | number = id;
+
+    if (gantt.isTaskExists(id)) {
+      while ((parentId = gantt.getParent(parentId)) !== 0) {
+        gantt.open(parentId);
+      }
+
+      gantt.selectTask(id);
+      gantt.showTask(id);
+    }
+
+    this.setState({
+      findId: this.focusSearchId,
+    });
   }
 
   /**
@@ -83,8 +138,12 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
       end: Date,
       task: GanttTask
     ) {
-      let buildStr = "<b>Title:</b> " + task.text + "<br/><b>State:</b> " +
-      task.state + "<br/>";
+      let buildStr =
+        "<b>Title:</b> " +
+        task.text +
+        "<br/><b>State:</b> " +
+        task.state +
+        "<br/>";
 
       if (task.unscheduled) {
         buildStr += "<b>Progress:</b> Unplanned<br/>";
@@ -101,7 +160,7 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
           (task.calculatedEnd ? "Estimated " : "") +
           "Target:</b> " +
           Gantt.DATE_TO_STR(end) +
-          "<br/>"
+          "<br/>";
       }
 
       return buildStr;
@@ -115,10 +174,11 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
       return false; //blocks the default behavior
     };
 
-    gantt.templates.quick_info_date = function(
+    gantt.templates.quick_info_date = function (
       start: Date,
       end: Date,
-      task: GanttTask){
+      task: GanttTask
+    ) {
       return Gantt.DATE_TO_STR(start) + " - " + Gantt.DATE_TO_STR(end);
     };
 
@@ -127,7 +187,11 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
       end: Date,
       task: GanttTask
     ) {
-      return '<div class="gantt-qi-description">' + (task.description ? task.description : "") + '</div>';
+      return (
+        '<div class="gantt-qi-description">' +
+        (task.description ? task.description : "") +
+        "</div>"
+      );
     };
   }
 
@@ -149,6 +213,13 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
       gantt.init(this.ganttContainer);
       gantt.clearAll();
       gantt.parse(this.props.config.data);
+      this.toggleOpenAll(false);
+      // Configure marker.
+      gantt.addMarker({
+        start_date: new Date(),
+        css: "today",
+        text: "Today",
+      });
     }
   }
 
@@ -159,7 +230,7 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
     const _self = this;
 
     // Configure the Container.
-    gantt.config.layout = {
+    gantt.config.layout_full = {
       css: "gantt_container",
       cols: [
         {
@@ -189,6 +260,16 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
         { view: "scrollbar", id: "scrollVer" },
       ],
     };
+
+    gantt.config.layout_ganttonly = {
+      css: "gantt_container",
+      cols: [
+        gantt.config.layout_full.cols[2],
+        gantt.config.layout_full.cols[3],
+      ],
+    };
+
+    gantt.config.layout = gantt.config.layout_full;
 
     // Task table columns.
     gantt.config.columns = [
@@ -222,19 +303,47 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
     ) {
       let styleClasses = "gantt-" + _self.getTaskSuffixClass(task);
 
-      if (task.state !== Constants.WIT_STATE_IN_PROGRESS && task.state !== Constants.WIT_STATE_DONE) {
+      if (
+        task.state !== Constants.WIT_STATE_IN_PROGRESS &&
+        task.state !== Constants.WIT_STATE_DONE
+      ) {
         styleClasses += " gantt-estimated";
       }
 
       return styleClasses;
     };
 
+    // Table
     gantt.templates.grid_folder = function (task: GanttTask) {
       return _self.getSymbolClass(task.azureType);
     };
 
     gantt.templates.grid_file = function (task: GanttTask) {
       return _self.getSymbolClass(task.azureType);
+    };
+
+    // Indicate holidays and weekends in gantt chart.
+    gantt.templates.scale_cell_class = function (date: Date): string {
+      if (gantt.config.currentUnit === DisplayInterval.Day) {
+        if (date.getDay() == 0 || date.getDay() == 6) {
+          return "gantt-chart-holiday";
+        }
+      }
+
+      return "";
+    };
+
+    gantt.templates.timeline_cell_class = function (
+      task: GanttTask,
+      date: Date
+    ): string {
+      if (gantt.config.currentUnit === DisplayInterval.Day) {
+        if (date.getDay() == 0 || date.getDay() == 6) {
+          return "gantt-chart-holiday";
+        }
+      }
+
+      return "";
     };
   }
 
@@ -377,13 +486,49 @@ export default class Gantt extends Component<{ config: IGanttConfig }> {
 
   render() {
     return (
-      <div
-        className="full-size"
-        ref={(input) => {
-          this.ganttContainer = input;
-        }}
-        style={{ width: "100%", height: "740px" }}
-      ></div>
+      <div>
+        <div className="flex-row margin-bottom-8">
+          <TextField
+            ariaLabel="Go to"
+            containerClassName="gantt-id-lookup"
+            prefixIconProps={{ iconName: "Search" }}
+            value={this.focusSearchId}
+            onChange={this.selectTask.bind(this)}
+            placeholder="ID"
+            width={TextFieldWidth.standard}
+          />
+          <div className="flex-column padding-left-16">
+            <Button text="Show Chart" onClick={() => this.toggleGrid(true)} />
+          </div>
+          <div className="flex-column padding-left-4 gantt-buttons">
+            <Button text="Hide Chart" onClick={() => this.toggleGrid(false)} />
+          </div>
+          <div className="flex-column padding-left-16 gantt-buttons">
+            <Button text="Show Today" onClick={() => gantt.showDate(new Date())} />
+          </div>
+          <div className="flex-column padding-left-16">
+            <Button
+              text="Expand All"
+              iconProps={{ iconName: "ZoomIn" }}
+              onClick={() => this.toggleOpenAll(true)}
+            />
+          </div>
+          <div className="flex-column padding-left-4 flex-end">
+            <Button
+              text="Collapse All"
+              iconProps={{ iconName: "ZoomOut" }}
+              onClick={() => this.toggleOpenAll(false)}
+            />
+          </div>
+        </div>
+        <div
+          className="full-size"
+          ref={(input) => {
+            this.ganttContainer = input;
+          }}
+          style={{ width: "100%", height: "700px" }}
+        ></div>
+      </div>
     );
   }
 }

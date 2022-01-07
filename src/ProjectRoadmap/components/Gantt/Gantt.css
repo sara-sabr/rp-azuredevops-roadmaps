@@ -2,6 +2,26 @@
     height: 100%;
 }
 
+.gantt-id-lookup {
+    width: 100px;
+    padding-top: 1px;
+    padding-right: 16px;
+    border-right: 1px solid #f2f2f2;
+}
+
+.gantt-buttons {
+    border-right: 1px solid #f2f2f2;
+    padding-right: 16px;
+}
+
+.gantt-zoomin {
+    padding-left: 50px;
+}
+
+.gantt-chart-holiday {
+    background: #f4f7f4 !important;
+}
+
 /**
  * Quick Info
  */
