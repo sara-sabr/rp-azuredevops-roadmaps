@@ -5,7 +5,7 @@
       "type": "ms.vss-web.hub",
       "targets": ["ms.vss-work-web.work-hub-group"],
       "properties": {
-        "name": "Project Roadmap",
+        "name": "Roadmaps",
         "uri": "dist/ProjectRoadmap/ProjectRoadmap.html",
         "order": 102,
         "icon": {

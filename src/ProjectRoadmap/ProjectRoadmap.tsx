@@ -14,30 +14,32 @@ import {
   HeaderTitleRow,
   TitleSize,
 } from "azure-devops-ui/Header";
-
-import { HeaderCommandBar } from "azure-devops-ui/HeaderCommandBar";
+import {
+  DropdownMultiSelection,
+  DropdownSelection,
+} from "azure-devops-ui/Utilities/DropdownSelection";
+import { DropdownFilterBarItem } from "azure-devops-ui/Dropdown";
 import { FilterBar } from "azure-devops-ui/FilterBar";
 import {
   Filter,
   FILTER_CHANGE_EVENT,
   FilterOperatorType,
 } from "azure-devops-ui/Utilities/Filter";
-import { Page } from "azure-devops-ui/Page";
-import { ProjectRoadmapCommandMenu } from "./ProjectRoadmapCommandMenu.ui";
-import { IProjectRoadmap } from "./IProjectRoadmap.state";
-import { Spinner, SpinnerSize } from "azure-devops-ui/Spinner";
-import { ObservableValue } from "azure-devops-ui/Core/Observable";
-import {
-  DropdownMultiSelection,
-  DropdownSelection,
-} from "azure-devops-ui/Utilities/DropdownSelection";
-import { DropdownFilterBarItem } from "azure-devops-ui/Dropdown";
-import { ProjectRoadmapService } from "./ProjectRoadmap.service";
+import { HeaderCommandBar } from "azure-devops-ui/HeaderCommandBar";
 import { IMenuItem } from "azure-devops-ui/Menu";
 import { IListBoxItem } from "azure-devops-ui/ListBox";
+import { Page } from "azure-devops-ui/Page";
+import { Panel } from "azure-devops-ui/Panel";
+import { Spinner, SpinnerSize } from "azure-devops-ui/Spinner";
+import { Observer } from "azure-devops-ui/Observer";
+import { ObservableValue } from "azure-devops-ui/Core/Observable";
 import { ZeroData } from "azure-devops-ui/ZeroData";
 
-import { Constants, ProjectService } from "@esdc-it-rp/azuredevops-common";
+// Project level.
+import { Constants } from "@esdc-it-rp/azuredevops-common";
+import { ProjectRoadmapCommandMenu } from "./ProjectRoadmapCommandMenu.ui";
+import { ProjectRoadmapService } from "./ProjectRoadmap.service";
+import { IProjectRoadmap } from "./IProjectRoadmap.state";
 import Gantt from "./components/Gantt/Gantt";
 import { GanttTask } from "./components/Gantt/GanttTask";
 import { DisplayInterval } from "./DisplayInterval.enum";
@@ -53,11 +55,6 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    * Singleton instance.
    */
   private static singleton: ProjectRoadmap;
-
-  /**
-   * The project name.
-   */
-  private projectName: string = "";
 
   /**
    * The current filer being applied.
@@ -98,6 +95,11 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    * @see https://reactjs.org/blog/2018/06/07/you-probably-dont-need-derived-state.html
    */
   private forceRefreshFlipper: number = 0;
+
+  /**
+   * About is open.
+   */
+  private isAboutOpen = new ObservableValue<boolean>(false);
 
   /**
    * Visible work item types.
@@ -221,16 +223,29 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     });
 
     // Interval change.
-    this.commandButtons.attachOnIntervalActivate(this.changeInterval);
+    this.commandButtons.attachOnIntervalActivate(
+      this.changeInterval.bind(this)
+    );
 
-    // Expand and Collpase change.
-    this.commandButtons.attachOnExpandCollapseActivate(this.performExpandOrCollapseAll);
+    // About change.
+    this.commandButtons.attachOnAboutActivate(this.toggleAbout.bind(this));
+  }
+
+  /**
+   * Turn on or off the about page.
+   */
+  private toggleAbout(): void {
+    this.isAboutOpen.value = !this.isAboutOpen.value;
   }
 
   /**
    * Refresh the gantt chart data by reloading the gantt information and applying the filter.
    */
   private async refreshGantt(): Promise<void> {
+    // Force the page to show page loading ...
+    this.pageData.roadmap = [];
+    this.refreshState();
+
     this.pageData.roadmap = await ProjectRoadmapService.createGantt(
       // For future use to query historic roadmaps.
       this.pageData.asOf
@@ -248,8 +263,8 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     menuItem: IMenuItem,
     event?: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
   ): void {
-    ProjectRoadmap.getInstance().pageData.ganttConfig.unit = menuItem.data;
-    ProjectRoadmap.getInstance().refreshState();
+    this.pageData.ganttConfig.unit = menuItem.data;
+    this.refreshState();
   }
 
   /**
@@ -262,28 +277,13 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     this.performMountAsync();
   }
 
-
-  /**
-   * User choose to change interval.
-   *
-   * @param menuItem the menu item that was selected.
-   * @param event the event that caused the action
-   */
-  private performExpandOrCollapseAll(
-    menuItem: IMenuItem,
-    event?: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>):void {
-      Gantt.toggleOpenAll(menuItem.data);
-  }
-
   /**
    * Mount activiites that are async.
    */
   private async performMountAsync(): Promise<void> {
     await SDK.init();
-    this.projectName = await ProjectService.getProjectName();
     await this.populateAreaPath();
     await this.refreshGantt();
-    Gantt.toggleOpenAll(false);
   }
 
   /**
@@ -364,7 +364,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
           <HeaderTitleArea>
             <HeaderTitleRow>
               <HeaderTitle ariaLevel={3} titleSize={TitleSize.Large}>
-                Project Roadmap
+                Roadmaps
               </HeaderTitle>
             </HeaderTitleRow>
           </HeaderTitleArea>
@@ -429,6 +429,40 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
             )
           }
         </div>
+        <Observer isAboutOpen={this.isAboutOpen}>
+          {(props: { isAboutOpen: boolean }) => {
+            return props.isAboutOpen ? (
+              <Panel
+                onDismiss={() => (this.isAboutOpen.value = false)}
+                titleProps={{ text: "About" }}
+                footerButtonProps={[
+                  {
+                    text: "Close",
+                    primary: true,
+                    onClick: () => (this.isAboutOpen.value = false),
+                  },
+                ]}
+              >
+                <div style={{ height: "100%" }}>
+                  <p>
+                    This is a MVP and improvements will be added as required or
+                    upon{" "}
+                    <a href="https://github.com/sara-sabr/rp-azuredevops-roadmaps">
+                      contribution
+                    </a>
+                    .
+                  </p>
+                  <p>
+                    Any issues/suggestions can be reported at{" "}
+                    <a href="https://github.com/sara-sabr/rp-azuredevops-roadmaps/issues">
+                      GitHub
+                    </a>
+                  </p>
+                </div>
+              </Panel>
+            ) : null;
+          }}
+        </Observer>
       </Page>
     );
   }

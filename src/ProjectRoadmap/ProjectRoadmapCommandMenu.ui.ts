@@ -23,30 +23,19 @@ export class ProjectRoadmapCommandMenu {
     },
     id: "itrp-pm-roadmap-header-refresh",
     text: "Refresh",
+    important: true,
   };
 
   /**
-   * Collapse button.
+   * About button.
    */
-   private collapseButton: IHeaderCommandBarItem = {
+  private aboutButton: IHeaderCommandBarItem = {
     iconProps: {
-      iconName: "ZoomOut",
+      iconName: "About",
     },
-    id: "itrp-pm-roadmap-header-collapse",
-    text: "Collapse All",
-    data: false
-  };
-
-  /**
-   * Collapse button.
-  */
-  private expandButton: IHeaderCommandBarItem = {
-      iconProps: {
-        iconName: "ZoomIn",
-      },
-      id: "itrp-pm-roadmap-header-expand",
-      text: "Expand All",
-      data: true
+    id: "itrp-pm-roadmap-header-about",
+    text: "About",
+    important: false,
   };
 
   /**
@@ -61,14 +50,14 @@ export class ProjectRoadmapCommandMenu {
     id: "itrp-pm-roadmap-header-interval",
     text: "Interval",
     disabled: false,
+    important: true,
   };
 
   /** Used to trigger update. */
   buttons: ObservableValue<IHeaderCommandBarItem[]> = new ObservableValue([
-    this.expandButton,
-    this.collapseButton,
     this.intervalButton,
     this.refreshButton,
+    this.aboutButton,
   ]);
 
   constructor() {
@@ -143,18 +132,17 @@ export class ProjectRoadmapCommandMenu {
   }
 
   /**
-   * Attach the event to expand or collapse button click.
+   * Attach the event to an about button click.
    *
    * @param event event to fire
    */
-   public attachOnExpandCollapseActivate(
+  public attachOnAboutActivate(
     event: (
       menuItem: IMenuItem,
       event?: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
     ) => boolean | void
   ): void {
-    this.collapseButton.onActivate = event;
-    this.expandButton.onActivate = event;
+    this.aboutButton.onActivate = event;
   }
 
   /**

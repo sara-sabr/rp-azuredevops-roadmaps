@@ -78,17 +78,17 @@ export class GanttTask {
   /**
    * Current task didn't have a start date defined, therefore this becomes derived.
    */
-   calculatedStart: boolean = false;
+  calculatedStart: boolean = false;
 
-   /**
-    * Current task didn't have an end date defined, therefore this becomes derived.
-    */
-   calculatedEnd: boolean = false;
+  /**
+   * Current task didn't have an end date defined, therefore this becomes derived.
+   */
+  calculatedEnd: boolean = false;
 
-   /**
-    * Current task state.
-    */
-   state: string = "";
+  /**
+   * Current task state.
+   */
+  state: string = "";
 
   /**
    * Convert a ProjectRoadmapTaskEntity information to a Gantt Task.

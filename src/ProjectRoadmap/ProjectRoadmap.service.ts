@@ -163,7 +163,9 @@ export class ProjectRoadmapService {
 
         // At this point, it start and end date are still null, try and defer it to the iteation path.
         if (workItem.start === undefined) {
-          workItem.start = iterationCache.get(workItem.iterationPath)?.attributes?.startDate;
+          workItem.start = iterationCache.get(
+            workItem.iterationPath
+          )?.attributes?.startDate;
 
           if (workItem.start) {
             workItem.calculatedStart = false;
@@ -171,7 +173,9 @@ export class ProjectRoadmapService {
         }
 
         if (workItem.end === undefined) {
-          workItem.end = iterationCache.get(workItem.iterationPath)?.attributes?.finishDate;
+          workItem.end = iterationCache.get(
+            workItem.iterationPath
+          )?.attributes?.finishDate;
 
           if (workItem.end) {
             workItem.calculatedEnd = false;
@@ -271,6 +275,7 @@ export class ProjectRoadmapService {
       projectRoadmaps
     );
     await ProjectRoadmapService.updateWorkItemProgress(roadmapTree);
+
     return projectRoadmaps;
   }
 }
