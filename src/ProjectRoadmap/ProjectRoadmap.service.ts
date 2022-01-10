@@ -171,7 +171,8 @@ export class ProjectRoadmapService {
           workItemType = workItemTypes.get(workItem.type);
           if (
             workItemType &&
-            workItemType.stateCompleted.indexOf(workItem.state) > -1
+            (workItemType.stateCompleted.indexOf(workItem.state) > -1 ||
+            workItemType.stateRemoved.indexOf(workItem.state) > -1)
           ) {
             calculatedProgress = 100;
           }
