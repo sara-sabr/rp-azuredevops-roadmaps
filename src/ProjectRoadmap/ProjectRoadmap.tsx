@@ -15,8 +15,7 @@ import {
   TitleSize,
 } from "azure-devops-ui/Header";
 import {
-  DropdownMultiSelection,
-  DropdownSelection,
+  DropdownMultiSelection
 } from "azure-devops-ui/Utilities/DropdownSelection";
 import { DropdownFilterBarItem } from "azure-devops-ui/Dropdown";
 import { FilterBar } from "azure-devops-ui/FilterBar";
@@ -36,7 +35,7 @@ import { ObservableValue } from "azure-devops-ui/Core/Observable";
 import { ZeroData } from "azure-devops-ui/ZeroData";
 
 // Project level.
-import { Constants } from "@esdc-it-rp/azuredevops-common";
+import { WorkItemProcessService, WorkItemTypeEntity } from "@esdc-it-rp/azuredevops-common";
 import { ProjectRoadmapCommandMenu } from "./ProjectRoadmapCommandMenu.ui";
 import { ProjectRoadmapService } from "./ProjectRoadmap.service";
 import { IProjectRoadmap } from "./IProjectRoadmap.state";
@@ -44,6 +43,7 @@ import Gantt from "./components/Gantt/Gantt";
 import { GanttTask } from "./components/Gantt/GanttTask";
 import { DisplayInterval } from "./DisplayInterval.enum";
 import { GanttLink } from "./components/Gantt/GanttLink";
+import { BacklogEntity } from "./Backlog.entity";
 
 /**
  * The status report page.
@@ -74,7 +74,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   /**
    * Filter for Work Item Type.
    */
-  private filterWorkItemGranularity = new DropdownSelection();
+  private filterWorkItem = new DropdownMultiSelection();
 
   /**
    * Current page data being used by react.
@@ -87,6 +87,11 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private areaPathList: IListBoxItem[] = [];
 
   /**
+   * Backlog levels.
+   */
+  private backlogLevels:BacklogEntity[] = [];
+
+  /**
    * This flag is incremented to force component reload.
    *
    * Breaking a reactjs pattern due to state and props being mixed together as our entire
@@ -97,19 +102,14 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private forceRefreshFlipper: number = 0;
 
   /**
+   * Work Item types.
+   */
+  private workItemTypes:ReadonlyMap<string, WorkItemTypeEntity> = new Map();
+
+  /**
    * About is open.
    */
   private isAboutOpen = new ObservableValue<boolean>(false);
-
-  /**
-   * Visible work item types.
-   */
-  private visibleWorkItemTypes = [
-    Constants.WIT_TYPE_EPIC,
-    Constants.WIT_TYPE_FEATURE,
-    Constants.WIT_TYPE_PBI,
-    Constants.WIT_TYPE_TASK,
-  ];
 
   /**
    * Constructor
@@ -157,7 +157,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
       operator: FilterOperatorType.and,
     });
 
-    that.filter.setFilterItemState("displayGranularity", {
+    that.filter.setFilterItemState("workItemTypes", {
       value: [],
     });
 
@@ -181,24 +181,12 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
       this.filter.getFilterItemState("areaPath")?.value;
 
     // Now hide the levels.
-    const visibleLevel: string =
-      this.filter.getFilterItemState("displayGranularity")?.value;
-
-    const hiddenTypes: string[] = [];
-
-    // Intentionally no break here.
-    switch (visibleLevel[0]) {
-      case Constants.WIT_TYPE_EPIC:
-        hiddenTypes.push(Constants.WIT_TYPE_FEATURE);
-      case Constants.WIT_TYPE_FEATURE:
-        hiddenTypes.push(Constants.WIT_TYPE_PBI);
-      case Constants.WIT_TYPE_PBI:
-        hiddenTypes.push(Constants.WIT_TYPE_TASK);
-    }
+    const workItemTypes: string[] =
+      this.filter.getFilterItemState("workItemTypes")?.value;
 
     if (areaPaths.length === 0) {
       this.pageData.roadmap.forEach((entry) => {
-        entry.hide = hiddenTypes.indexOf(entry.type) != -1;
+        entry.hide = this.isHiddenWorkItem(workItemTypes, entry.type);
       });
     } else {
       let topArea: string;
@@ -206,11 +194,23 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
         topArea = ProjectRoadmapService.getTopLevelAreaPath(entry.areaPath);
         entry.hide =
           areaPaths.indexOf(topArea) === -1 ||
-          hiddenTypes.indexOf(entry.type) != -1;
+          this.isHiddenWorkItem(workItemTypes, entry.type);
       });
     }
     this.populateGantt();
     this.refreshState();
+  }
+
+  /**
+   * Checks to see if we need to display the work item or not.
+   *
+   * @param visibleWorkItems work items we should show. An empty array results in all visible
+   * @param currentWorkItemType work type to check
+   * @returns true to show work item or false to hide it.
+   */
+  private isHiddenWorkItem(visibleWorkItems:string[], currentWorkItemType:string):boolean {
+    return visibleWorkItems.length !== 0 &&
+           visibleWorkItems.indexOf(currentWorkItemType) === -1
   }
 
   /**
@@ -283,6 +283,8 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private async performMountAsync(): Promise<void> {
     await SDK.init();
     await this.populateAreaPath();
+    this.workItemTypes = await WorkItemProcessService.getWorkItemTypes();
+    this.backlogLevels = await ProjectRoadmapService.getBacklogLevels();
     await this.refreshGantt();
   }
 
@@ -307,6 +309,25 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   }
 
   /**
+   * Get the backlog levels.
+   *
+   * @returns the list of backlog levels.
+   */
+  private getGranularityLevels(): IListBoxItem[] {
+    const listItems:IListBoxItem[] = [];
+
+    for (const b of this.backlogLevels) {
+      for (const w of b.workItemTypes) {
+        listItems.push(
+          { id: w, text: w, data: w}
+        );
+      }
+    }
+
+    return listItems;
+  }
+
+  /**
    * Refresh the state.
    */
   public refreshState(): void {
@@ -322,11 +343,16 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    */
   private populateGantt(): void {
     const tasks: GanttTask[] = [];
+    const parentChildMap:Map<string, string> = new Map();
     const allLinks: GanttLink[] = [];
     const visibleLinks: GanttLink[] = [];
     const visibleIDs: string[] = [];
 
     this.pageData.roadmap.forEach((azureItem) => {
+      if (azureItem.parent) {
+        parentChildMap.set(azureItem.id.toString(), azureItem.parent.toString());
+      }
+
       if (!azureItem.hide) {
         tasks.push(GanttTask.convert(azureItem));
         allLinks.push(...GanttLink.convert(azureItem));
@@ -337,8 +363,18 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     // Make sure all tasks do exist (if hidden, we need to remove parent).
     tasks.forEach((item) => {
       if (item.parent) {
-        if (visibleIDs.indexOf(item.parent) === -1) {
-          item.parent = undefined;
+        let currentParentId:string | undefined;
+        currentParentId = item.parent;
+
+        // See if we can find a visible ancestor.
+        while (currentParentId) {
+          if (visibleIDs.indexOf(currentParentId) > -1) {
+            // Exit as we found this ancestor to be visible.
+            break;
+          } else {
+            currentParentId = parentChildMap.get(currentParentId);
+            item.parent = currentParentId;
+          }
         }
       }
     });
@@ -387,11 +423,11 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
               <div className="flex-grow">
                 <FilterBar filter={this.filter}>
                   <DropdownFilterBarItem
-                    filterItemKey="displayGranularity"
+                    filterItemKey="workItemTypes"
                     filter={this.filter}
-                    items={this.visibleWorkItemTypes}
-                    selection={this.filterWorkItemGranularity}
-                    placeholder="Granularity"
+                    items={this.getGranularityLevels()}
+                    selection={this.filterWorkItem}
+                    placeholder="Work Item Type"
                   />
                   <DropdownFilterBarItem
                     filterItemKey="areaPath"

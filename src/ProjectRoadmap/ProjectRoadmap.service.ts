@@ -17,6 +17,7 @@ import {
 } from "@esdc-it-rp/azuredevops-common";
 import { ProjectRoadmapConfig } from "./ProjectRoadmap.config";
 import { ProjectRoadmapTaskEntity } from "./ProjectRoadmapTask.entity";
+import { BacklogEntity } from "./Backlog.entity";
 
 /**
  * Service for project roadmap.
@@ -41,10 +42,45 @@ export class ProjectRoadmapService {
   }
 
   /**
+   * Get the backlog levels and the items under them.
+   *
+   * @returns the backlog levels.
+   */
+  static async getBacklogLevels():Promise<BacklogEntity[]> {
+    const backlogLevelsArray:BacklogEntity[] = [];
+    const projectId = await ProjectService.getProjectId();
+    const projectInfo = await CommonRepositories.CORE_API_CLIENT.getProject(projectId);
+    const defaultTeam = projectInfo.defaultTeam;
+    const backlogInfo = await CommonRepositories.WORK_API_CLIENT.getBacklogs({
+      projectId: projectId,
+      project: projectInfo.name,
+      teamId: defaultTeam.id,
+      team: defaultTeam.name
+    });
+
+    for (const b of backlogInfo) {
+      backlogLevelsArray.push(BacklogEntity.create(b));
+    }
+
+    backlogLevelsArray.sort((a,b) => {
+      if (a.rank > b.rank) {
+        return -1;
+      } else if (a.rank < b.rank) {
+        return 1;
+      } else {
+        return 0;
+      }
+    });
+
+    return backlogLevelsArray;
+  }
+
+  /**
    * Area paths that are available to the project.
    */
   static async getAreaPathsForProject(): Promise<WorkItemClassificationNode[]> {
     const projectName = await ProjectService.getProjectName();
+
     const classificatioNodes =
       await CommonRepositories.WIT_API_CLIENT.getClassificationNode(
         projectName,
@@ -115,8 +151,9 @@ export class ProjectRoadmapService {
     let workItem: ProjectRoadmapTaskEntity;
     let calculatedProgress: number;
     const iterationCache = await ProjectCacheService.getProjectIterations();
-    const workItemTypes = await WorkItemProcessService.getWorkItemTypes();
+    const workItemTypes = await WorkItemProcessService.getCachedWorkItemTypes();
     let workItemType: WorkItemTypeEntity | undefined;
+
     ProjectRoadmapService.traverse(roadmapTree, result);
 
     for (var i = 0; i <= result.length; i++) {
@@ -169,7 +206,7 @@ export class ProjectRoadmapService {
 
         workItem.progress = calculatedProgress;
 
-        // At this point, it start and end date are still null, try and defer it to the iteation path.
+        // At this point, if start and end date are still null, try and defer it to the iteation path.
         if (workItem.start === undefined) {
           workItem.start = iterationCache.get(
             workItem.iterationPath
