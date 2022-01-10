@@ -1,16 +1,19 @@
+// Library
 import {
   TreeStructureGroup,
   WorkItemClassificationNode,
 } from "azure-devops-extension-api/WorkItemTracking";
 
+// Project
 import {
   CommonRepositories,
-  Constants,
   ProjectCacheService,
   ProjectService,
   SearchRepository,
   SearchResultEntity,
   TreeNode,
+  WorkItemProcessService,
+  WorkItemTypeEntity,
 } from "@esdc-it-rp/azuredevops-common";
 import { ProjectRoadmapConfig } from "./ProjectRoadmap.config";
 import { ProjectRoadmapTaskEntity } from "./ProjectRoadmapTask.entity";
@@ -112,7 +115,8 @@ export class ProjectRoadmapService {
     let workItem: ProjectRoadmapTaskEntity;
     let calculatedProgress: number;
     const iterationCache = await ProjectCacheService.getProjectIterations();
-
+    const workItemTypes = await WorkItemProcessService.getWorkItemTypes();
+    let workItemType: WorkItemTypeEntity | undefined;
     ProjectRoadmapService.traverse(roadmapTree, result);
 
     for (var i = 0; i <= result.length; i++) {
@@ -127,7 +131,11 @@ export class ProjectRoadmapService {
 
         // Calculate the progress for the work item.
         if (currentNode.isLeaf()) {
-          if (workItem.state === Constants.WIT_STATE_DONE) {
+          workItemType = workItemTypes.get(workItem.type);
+          if (
+            workItemType &&
+            workItemType.stateCompleted.indexOf(workItem.state) > -1
+          ) {
             calculatedProgress = 100;
           }
         } else {

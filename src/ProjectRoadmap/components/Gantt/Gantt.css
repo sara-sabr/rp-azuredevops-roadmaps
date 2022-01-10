@@ -48,43 +48,11 @@ div.gantt-qi-description {
     margin: 0.5em 5px;
 }
 
-.gantt-symbol-epic {
-    background-color: #ffa31a;
-}
-
-.gantt-symbol-feature {
-    background-color: #e699ff;
-}
-
-.gantt-symbol-pbi {
-    background-color: #3db9d3;
-}
-
 /**
  * Gantt Chart
  */
 .gantt-estimated {
     border-style: dashed !important;
-}
-
-.gantt-epic {
-    background-color: #ffc266;
-    border: 3px solid #e68a00;
-}
-
-.gantt-epic .gantt_task_progress {
-    background-color: #ffa31a;
-}
-
-.gantt-feature {
-    background-color: #e699ff;
-    border: 3px solid #8600b3;
-}
-
-.gantt-feature .gantt_task_progress {
-    background-color: #ac00e6;
-}
-
-.gantt-pbi {
-    border-width: 3px;
+    border-width: 2px;
+    border-color: black !important;
 }

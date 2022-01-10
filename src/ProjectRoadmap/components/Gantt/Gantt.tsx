@@ -1,15 +1,22 @@
+// CSS
+import "dhtmlx-gantt/codebase/dhtmlxgantt.css";
+import "./Gantt.css";
+
+// Library
 import * as React from "react";
 import { Button } from "azure-devops-ui/Button";
 import { Component } from "react";
 import { gantt } from "dhtmlx-gantt";
-import "dhtmlx-gantt/codebase/dhtmlxgantt.css";
-import "./Gantt.css";
-import { IGanttConfig } from "./IGantt.config";
-import { DisplayInterval } from "../../DisplayInterval.enum";
-import { Constants, ProjectService } from "@esdc-it-rp/azuredevops-common";
-import { GanttTask } from "./GanttTask";
 import { TextField, TextFieldWidth } from "azure-devops-ui/TextField";
 
+// Project
+import { DisplayInterval } from "../../DisplayInterval.enum";
+import { GanttTask } from "./GanttTask";
+import { IGanttConfig } from "./IGantt.config";
+import {
+  ProjectService,
+  WorkItemProcessService,
+} from "@esdc-it-rp/azuredevops-common";
 
 /**
  * Gantt component leveraging dhtmlxGantt which is an open source JavaScript
@@ -18,7 +25,6 @@ import { TextField, TextFieldWidth } from "azure-devops-ui/TextField";
  * @see https://github.com/DHTMLX/gantt
  * @see https://docs.dhtmlx.com/gantt/
  */
-
 export default class Gantt extends Component<
   { config: IGanttConfig },
   { findId: string }
@@ -301,25 +307,27 @@ export default class Gantt extends Component<
       end: Date,
       task: GanttTask
     ) {
-      let styleClasses = "gantt-" + _self.getTaskSuffixClass(task);
-
+      const workItemType = WorkItemProcessService.getCachedWorkItemTypes().get(
+        task.azureType
+      );
       if (
-        task.state !== Constants.WIT_STATE_IN_PROGRESS &&
-        task.state !== Constants.WIT_STATE_DONE
+        workItemType &&
+        workItemType.stateCompleted.indexOf(task.state) === -1 &&
+        workItemType.stateInProgress.indexOf(task.state) === -1
       ) {
-        styleClasses += " gantt-estimated";
+        return "gantt-estimated";
       }
 
-      return styleClasses;
+      return "";
     };
 
     // Table
     gantt.templates.grid_folder = function (task: GanttTask) {
-      return _self.getSymbolClass(task.azureType);
+      return _self.generateIndicator(task);
     };
 
     gantt.templates.grid_file = function (task: GanttTask) {
-      return _self.getSymbolClass(task.azureType);
+      return _self.generateIndicator(task);
     };
 
     // Indicate holidays and weekends in gantt chart.
@@ -352,47 +360,23 @@ export default class Gantt extends Component<
    * @param azureType the work item
    * @returns the HTML to show the different types.
    */
-  private getSymbolClass(azureType: string): string {
-    let extraClass = "";
+  private generateIndicator(task: GanttTask): string {
+    let backgroundColor = "";
 
-    switch (azureType) {
-      case Constants.WIT_TYPE_EPIC:
-        extraClass = "gantt-symbol-epic";
-        break;
-      case Constants.WIT_TYPE_FEATURE:
-        extraClass = "gantt-symbol-feature";
-        break;
-      case Constants.WIT_TYPE_PBI:
-        extraClass = "gantt-symbol-pbi";
-        break;
-      default:
-        return "";
+    const workItemType = WorkItemProcessService.getCachedWorkItemTypes().get(
+      task.azureType
+    );
+    if (workItemType) {
+      backgroundColor = "background-color: " + workItemType.color;
     }
 
     return (
-      "<div aria-label='Epic' class='gantt-symbol " +
-      extraClass +
-      "' role='figure'></div>"
+      "<div aria-label='" +
+      task.azureType +
+      "' class='gantt-symbol' role='figure' style='" +
+      backgroundColor +
+      "'></div>"
     );
-  }
-
-  /**
-   * Return the suffix for a given task
-   *
-   * @param task the task
-   * @returns the suffix for the given task.
-   */
-  private getTaskSuffixClass(task: GanttTask): string {
-    switch (task.azureType) {
-      case Constants.WIT_TYPE_EPIC:
-        return "epic";
-      case Constants.WIT_TYPE_FEATURE:
-        return "feature";
-      case Constants.WIT_TYPE_PBI:
-        return "pbi";
-      default:
-        return "";
-    }
   }
 
   /**
@@ -504,7 +488,10 @@ export default class Gantt extends Component<
             <Button text="Hide Chart" onClick={() => this.toggleGrid(false)} />
           </div>
           <div className="flex-column padding-left-16 gantt-buttons">
-            <Button text="Show Today" onClick={() => gantt.showDate(new Date())} />
+            <Button
+              text="Show Today"
+              onClick={() => gantt.showDate(new Date())}
+            />
           </div>
           <div className="flex-column padding-left-16">
             <Button
