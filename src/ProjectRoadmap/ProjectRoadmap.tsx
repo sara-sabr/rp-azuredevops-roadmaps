@@ -43,6 +43,7 @@ import { GanttTask } from "./components/Gantt/GanttTask";
 import { DisplayInterval } from "./DisplayInterval.enum";
 import { GanttLink } from "./components/Gantt/GanttLink";
 import { BacklogEntity } from "./Backlog.entity";
+import { WorkItemProcessService } from "@esdc-it-rp/azuredevops-common";
 
 /**
  * The status report page.
@@ -277,6 +278,9 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private async performMountAsync(): Promise<void> {
     await SDK.init();
     await this.populateAreaPath();
+
+    // Load in the cache.
+    await WorkItemProcessService.getWorkItemTypes();
     this.backlogLevels = await ProjectRoadmapService.getBacklogLevels();
     await this.refreshGantt();
   }

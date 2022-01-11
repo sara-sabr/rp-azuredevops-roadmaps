@@ -19,7 +19,7 @@
     "start:dev": "webpack-dev-server --mode development --config webpack.dev.config.js"
   },
   "dependencies": {
-    "@esdc-it-rp/azuredevops-common": "^1.0.7",
+    "@esdc-it-rp/azuredevops-common": "^1.0.8",
     "azure-devops-extension-api": "^1.158.0",
     "azure-devops-extension-sdk": "^2.0.11",
     "azure-devops-ui": "^2.167.28",
