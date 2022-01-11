@@ -35,7 +35,6 @@ import { ObservableValue } from "azure-devops-ui/Core/Observable";
 import { ZeroData } from "azure-devops-ui/ZeroData";
 
 // Project level.
-import { WorkItemProcessService, WorkItemTypeEntity } from "@esdc-it-rp/azuredevops-common";
 import { ProjectRoadmapCommandMenu } from "./ProjectRoadmapCommandMenu.ui";
 import { ProjectRoadmapService } from "./ProjectRoadmap.service";
 import { IProjectRoadmap } from "./IProjectRoadmap.state";
@@ -100,11 +99,6 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    * @see https://reactjs.org/blog/2018/06/07/you-probably-dont-need-derived-state.html
    */
   private forceRefreshFlipper: number = 0;
-
-  /**
-   * Work Item types.
-   */
-  private workItemTypes:ReadonlyMap<string, WorkItemTypeEntity> = new Map();
 
   /**
    * About is open.
@@ -283,7 +277,6 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private async performMountAsync(): Promise<void> {
     await SDK.init();
     await this.populateAreaPath();
-    this.workItemTypes = await WorkItemProcessService.getWorkItemTypes();
     this.backlogLevels = await ProjectRoadmapService.getBacklogLevels();
     await this.refreshGantt();
   }
