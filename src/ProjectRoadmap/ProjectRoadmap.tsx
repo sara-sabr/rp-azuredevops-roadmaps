@@ -66,12 +66,15 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    */
   private static readonly FILTER_KEY_KEYWORD = "keyword";
 
-  private commandButtons: ProjectRoadmapCommandMenu;
+  /**
+   * Filter key for tag.
+   */
+  private static readonly FILTER_KEY_TAGS = "tags";
 
   /**
-   * The current filer being applied.
+   * Menu bar buttons.
    */
-  private currentFilterState = new ObservableValue("");
+  private commandButtons: ProjectRoadmapCommandMenu;
 
   /**
    * Filter object for binding.
@@ -87,6 +90,11 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    * Filter for Work Item Type.
    */
   private filterWorkItem = new DropdownMultiSelection();
+
+  /**
+   * Filter for tag.
+   */
+  private filterTag = new DropdownMultiSelection();
 
   /**
    * Current page data being used by react.
@@ -119,9 +127,9 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private isAboutOpen = new ObservableValue<boolean>(false);
 
   /**
-   * Sets to true if the environment is properly configured.
+   * Tags available.
    */
-  private isProperlyConfigured = true;
+  private availableTags: string[] = [];
 
   /**
    * Constructor
@@ -139,6 +147,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
           links: [],
         },
       },
+      isProperlyConfigured: true,
       asOf: undefined,
     };
     this.commandButtons = new ProjectRoadmapCommandMenu();
@@ -164,12 +173,6 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     });
 
     that.filter.subscribe(() => {
-      this.currentFilterState.value = JSON.stringify(
-        this.filter.getState(),
-        null,
-        4
-      );
-
       that.filterRoadmap();
     }, FILTER_CHANGE_EVENT);
   }
@@ -188,19 +191,62 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
       ProjectRoadmap.FILTER_KEY_KEYWORD
     )?.value;
 
-    // Now hide the levels.
+    // Work Item Types.
     const workItemTypes: string[] = this.filter.getFilterItemState(
       ProjectRoadmap.FILTER_KEY_WIT
+    )?.value;
+
+    const workingAvailableTags: Set<string> = new Set();
+
+    // tags.
+    const visibleTags: string[] = this.filter.getFilterItemState(
+      ProjectRoadmap.FILTER_KEY_TAGS
     )?.value;
 
     this.pageData.roadmap.forEach((entry) => {
       entry.hide =
         this.isHiddenWorkItemAreaPath(areaPaths, entry) ||
         this.isHiddenWorkItemType(workItemTypes, entry.type) ||
-        this.isHiddenWorkItemKeyword(keyword, entry);
+        this.isHiddenWorkItemKeyword(keyword, entry) ||
+        this.isHiddenWorkItemTag(visibleTags, entry);
+      if (entry.tags) {
+        for (let tag of entry.tags) {
+          workingAvailableTags.add(tag);
+        }
+      }
     });
+
+    this.availableTags = Array.from(workingAvailableTags);
     this.populateGantt();
     this.refreshState();
+  }
+
+  /**
+   * Check if the work item is hidden based off a tag.
+   *
+   * @param visibleTags tags that should be shwon
+   * @param currentTask the current task
+   * @returns true if task should be hidden.
+   */
+  private isHiddenWorkItemTag(
+    visibleTags: string[] | undefined,
+    currentTask: ProjectRoadmapTaskEntity
+  ): boolean {
+    if (visibleTags && visibleTags.length > 0) {
+      if (currentTask.tags.length === 0) {
+        return true;
+      }
+
+      for (const t of visibleTags) {
+        if (currentTask.tags.indexOf(t) !== -1) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    return false;
   }
 
   /**
@@ -293,6 +339,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private async refreshGantt(): Promise<void> {
     // Force the page to show page loading ...
     this.pageData.roadmap = [];
+    this.pageData.isProperlyConfigured = true;
     this.refreshState();
 
     try {
@@ -301,10 +348,9 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
         this.pageData.asOf
       );
 
-      this.isProperlyConfigured = true;
       this.filterRoadmap();
     } catch (e) {
-      this.isProperlyConfigured = false;
+      this.pageData.isProperlyConfigured = false;
       this.refreshState();
     }
   }
@@ -471,7 +517,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
         <div className="page-content-left page-content-right page-content-top">
           {
             /** Print this on misconfiguration. */
-            this.isProperlyConfigured === false && (
+            this.state.isProperlyConfigured === false && (
               <div>
                 <MessageCard
                   className="flex-self-stretch"
@@ -554,7 +600,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
           }
           {
             /** Print this on no data. */
-            this.state.roadmap.length === 0 && this.isProperlyConfigured && (
+            this.state.roadmap.length === 0 && this.state.isProperlyConfigured && (
               <div className="flex-row v-align-middle justify-center full-size">
                 <Spinner size={SpinnerSize.large} label="Please wait ..." />
               </div>
@@ -564,7 +610,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
             /**
              * Print on data.
              */
-            this.state.roadmap.length > 0 && (
+            this.state.roadmap.length > 0 && this.state.isProperlyConfigured && (
               <div className="flex-grow">
                 <FilterBar filter={this.filter}>
                   <KeywordFilterBarItem
@@ -573,15 +619,26 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
                     placeholder="Filter by text contained in title (case-insensitive)"
                   />
                   <DropdownFilterBarItem
+                    showFilterBox={true}
                     filterItemKey={ProjectRoadmap.FILTER_KEY_WIT}
                     filter={this.filter}
                     items={this.getBacklogLevelItems()}
                     selection={this.filterWorkItem}
                     placeholder="Work Item Type"
                   />
+                  <DropdownFilterBarItem
+                    showFilterBox={true}
+                    filterItemKey={ProjectRoadmap.FILTER_KEY_TAGS}
+                    filter={this.filter}
+                    items={this.availableTags}
+                    selection={this.filterTag}
+                    placeholder="Tags"
+                  />
+
                   {this.areaPathList.length > 0 && (
                     // Only allow filtering area path if an area path does exist for a project.
                     <DropdownFilterBarItem
+                      showFilterBox={true}
                       filterItemKey={ProjectRoadmap.FILTER_KEY_AREAPATH}
                       filter={this.filter}
                       items={this.areaPathList}
@@ -594,7 +651,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
                   /**
                    * Show the gantt chart if we have data.
                    */
-                  this.pageData.ganttConfig.data.tasks.length > 0 && (
+                  this.state.ganttConfig.data.tasks.length > 0 && (
                     <Gantt
                       config={this.pageData.ganttConfig}
                       key={this.forceRefreshFlipper}
@@ -605,7 +662,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
                   /**
                    * Show no results if a filter or search results has no data.
                    */
-                  this.pageData.ganttConfig.data.tasks.length === 0 && (
+                  this.state.ganttConfig.data.tasks.length === 0 && (
                     <ZeroData
                       className="flex-row v-align-middle justify-center full-size"
                       primaryText="No data."
