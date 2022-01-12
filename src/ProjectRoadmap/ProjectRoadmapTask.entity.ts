@@ -84,6 +84,11 @@ export class ProjectRoadmapTaskEntity extends WorkItemBaseWithPredecessor {
   iterationPath: string = "";
 
   /**
+   * Tags applied to this work item.
+   */
+  tags: string[] = [];
+
+  /**
    * @inheritdoc
    */
   public populateFromWorkItem(workItem: WorkItem): void {
@@ -94,5 +99,9 @@ export class ProjectRoadmapTaskEntity extends WorkItemBaseWithPredecessor {
     this.areaPath = workItem.fields[Constants.WIT_FIELD_AREA_PATH];
     this.description = workItem.fields[Constants.WIT_FIELD_DESCRIPTION];
     this.iterationPath = workItem.fields[Constants.WIT_FIELD_ITERATION_PATH];
+
+    if (workItem.fields["System.Tags"]) {
+      this.tags = (workItem.fields["System.Tags"] as string).split("; ");
+    }
   }
 }

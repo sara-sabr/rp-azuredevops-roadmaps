@@ -24,4 +24,9 @@ export interface IProjectRoadmap {
    * Retreive the data based on now (undefined) or as of a given date.
    */
   asOf: Date | undefined;
+
+  /**
+   * True if the roadmap for the project is properly configured.
+   */
+  isProperlyConfigured: boolean;
 }

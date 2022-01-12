@@ -46,23 +46,25 @@ export class ProjectRoadmapService {
    *
    * @returns the backlog levels.
    */
-  static async getBacklogLevels():Promise<BacklogEntity[]> {
-    const backlogLevelsArray:BacklogEntity[] = [];
+  static async getBacklogLevels(): Promise<BacklogEntity[]> {
+    const backlogLevelsArray: BacklogEntity[] = [];
     const projectId = await ProjectService.getProjectId();
-    const projectInfo = await CommonRepositories.CORE_API_CLIENT.getProject(projectId);
+    const projectInfo = await CommonRepositories.CORE_API_CLIENT.getProject(
+      projectId
+    );
     const defaultTeam = projectInfo.defaultTeam;
     const backlogInfo = await CommonRepositories.WORK_API_CLIENT.getBacklogs({
       projectId: projectId,
       project: projectInfo.name,
       teamId: defaultTeam.id,
-      team: defaultTeam.name
+      team: defaultTeam.name,
     });
 
     for (const b of backlogInfo) {
       backlogLevelsArray.push(BacklogEntity.create(b));
     }
 
-    backlogLevelsArray.sort((a,b) => {
+    backlogLevelsArray.sort((a, b) => {
       if (a.rank > b.rank) {
         return -1;
       } else if (a.rank < b.rank) {
@@ -172,7 +174,7 @@ export class ProjectRoadmapService {
           if (
             workItemType &&
             (workItemType.stateCompleted.indexOf(workItem.state) > -1 ||
-            workItemType.stateRemoved.indexOf(workItem.state) > -1)
+              workItemType.stateRemoved.indexOf(workItem.state) > -1)
           ) {
             calculatedProgress = 100;
           }

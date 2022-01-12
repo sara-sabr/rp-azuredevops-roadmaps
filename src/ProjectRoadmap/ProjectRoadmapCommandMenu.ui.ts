@@ -49,7 +49,6 @@ export class ProjectRoadmapCommandMenu {
   private intervalButton: IHeaderCommandBarItem = {
     id: "itrp-pm-roadmap-header-interval",
     text: "Interval",
-    disabled: false,
     important: true,
   };
 
@@ -96,6 +95,10 @@ export class ProjectRoadmapCommandMenu {
         item.checked = false;
       }
     });
+
+    // Hide the interval button in a submenu if misconfigured since hidden not working.
+    this.intervalButton.important = currentPage.isProperlyConfigured;
+    this.intervalButton.disabled = !currentPage.isProperlyConfigured;
 
     // Notify the subscribers.
     this.buttons.notify(this.buttons.value, "updateButtonStatus");

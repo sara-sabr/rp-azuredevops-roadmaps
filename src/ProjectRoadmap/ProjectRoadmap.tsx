@@ -14,9 +14,7 @@ import {
   HeaderTitleRow,
   TitleSize,
 } from "azure-devops-ui/Header";
-import {
-  DropdownMultiSelection
-} from "azure-devops-ui/Utilities/DropdownSelection";
+import { DropdownMultiSelection } from "azure-devops-ui/Utilities/DropdownSelection";
 import { DropdownFilterBarItem } from "azure-devops-ui/Dropdown";
 import { FilterBar } from "azure-devops-ui/FilterBar";
 import {
@@ -27,6 +25,9 @@ import {
 import { HeaderCommandBar } from "azure-devops-ui/HeaderCommandBar";
 import { IMenuItem } from "azure-devops-ui/Menu";
 import { IListBoxItem } from "azure-devops-ui/ListBox";
+import { Image } from "azure-devops-ui/Image";
+import { KeywordFilterBarItem } from "azure-devops-ui/TextFilterBarItem";
+import { MessageCard, MessageCardSeverity } from "azure-devops-ui/MessageCard";
 import { Page } from "azure-devops-ui/Page";
 import { Panel } from "azure-devops-ui/Panel";
 import { Spinner, SpinnerSize } from "azure-devops-ui/Spinner";
@@ -35,31 +36,45 @@ import { ObservableValue } from "azure-devops-ui/Core/Observable";
 import { ZeroData } from "azure-devops-ui/ZeroData";
 
 // Project level.
-import { ProjectRoadmapCommandMenu } from "./ProjectRoadmapCommandMenu.ui";
-import { ProjectRoadmapService } from "./ProjectRoadmap.service";
+import { BacklogEntity } from "./Backlog.entity";
+import { DisplayInterval } from "./DisplayInterval.enum";
 import { IProjectRoadmap } from "./IProjectRoadmap.state";
 import Gantt from "./components/Gantt/Gantt";
-import { GanttTask } from "./components/Gantt/GanttTask";
-import { DisplayInterval } from "./DisplayInterval.enum";
 import { GanttLink } from "./components/Gantt/GanttLink";
-import { BacklogEntity } from "./Backlog.entity";
+import { GanttTask } from "./components/Gantt/GanttTask";
+import { ProjectRoadmapCommandMenu } from "./ProjectRoadmapCommandMenu.ui";
+import { ProjectRoadmapService } from "./ProjectRoadmap.service";
 import { WorkItemProcessService } from "@esdc-it-rp/azuredevops-common";
+import { ProjectRoadmapTaskEntity } from "./ProjectRoadmapTask.entity";
 
 /**
  * The status report page.
  */
 class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
+  /**
+   * Filter key for Area Path.
+   */
+  private static readonly FILTER_KEY_AREAPATH = "areaPath";
+
+  /**
+   * Filter key for Work Item Type.
+   */
+  private static readonly FILTER_KEY_WIT = "wit";
+
+  /**
+   * Filter key for keyword.
+   */
+  private static readonly FILTER_KEY_KEYWORD = "keyword";
+
+  /**
+   * Filter key for tag.
+   */
+  private static readonly FILTER_KEY_TAGS = "tags";
+
+  /**
+   * Menu bar buttons.
+   */
   private commandButtons: ProjectRoadmapCommandMenu;
-
-  /**
-   * Singleton instance.
-   */
-  private static singleton: ProjectRoadmap;
-
-  /**
-   * The current filer being applied.
-   */
-  private currentFilterState = new ObservableValue("");
 
   /**
    * Filter object for binding.
@@ -77,6 +92,11 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private filterWorkItem = new DropdownMultiSelection();
 
   /**
+   * Filter for tag.
+   */
+  private filterTag = new DropdownMultiSelection();
+
+  /**
    * Current page data being used by react.
    */
   private pageData: IProjectRoadmap;
@@ -89,7 +109,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   /**
    * Backlog levels.
    */
-  private backlogLevels:BacklogEntity[] = [];
+  private backlogLevels: BacklogEntity[] = [];
 
   /**
    * This flag is incremented to force component reload.
@@ -107,6 +127,11 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private isAboutOpen = new ObservableValue<boolean>(false);
 
   /**
+   * Tags available.
+   */
+  private availableTags: string[] = [];
+
+  /**
    * Constructor
    *
    * @param props the properties
@@ -122,6 +147,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
           links: [],
         },
       },
+      isProperlyConfigured: true,
       asOf: undefined,
     };
     this.commandButtons = new ProjectRoadmapCommandMenu();
@@ -129,16 +155,6 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     this.state = this.pageData;
     this.initEvents();
     this.setupFilter();
-    ProjectRoadmap.singleton = this;
-  }
-
-  /**
-   * Get the singleton instance.
-   *
-   * @returns the singleton
-   */
-  static getInstance(): ProjectRoadmap {
-    return ProjectRoadmap.singleton;
   }
 
   /**
@@ -147,22 +163,16 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private setupFilter(): void {
     var that = this;
 
-    that.filter.setFilterItemState("areaPath", {
+    that.filter.setFilterItemState(ProjectRoadmap.FILTER_KEY_AREAPATH, {
       value: [],
       operator: FilterOperatorType.and,
     });
 
-    that.filter.setFilterItemState("workItemTypes", {
+    that.filter.setFilterItemState(ProjectRoadmap.FILTER_KEY_WIT, {
       value: [],
     });
 
     that.filter.subscribe(() => {
-      this.currentFilterState.value = JSON.stringify(
-        this.filter.getState(),
-        null,
-        4
-      );
-
       that.filterRoadmap();
     }, FILTER_CHANGE_EVENT);
   }
@@ -172,40 +182,130 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    */
   private filterRoadmap() {
     // Area Filtering
-    const areaPaths: string[] =
-      this.filter.getFilterItemState("areaPath")?.value;
+    const areaPaths: string[] = this.filter.getFilterItemState(
+      ProjectRoadmap.FILTER_KEY_AREAPATH
+    )?.value;
 
-    // Now hide the levels.
-    const workItemTypes: string[] =
-      this.filter.getFilterItemState("workItemTypes")?.value;
+    // Keyword
+    const keyword: string = this.filter.getFilterItemState(
+      ProjectRoadmap.FILTER_KEY_KEYWORD
+    )?.value;
 
-    if (areaPaths.length === 0) {
-      this.pageData.roadmap.forEach((entry) => {
-        entry.hide = this.isHiddenWorkItem(workItemTypes, entry.type);
-      });
-    } else {
-      let topArea: string;
-      this.pageData.roadmap.forEach((entry) => {
-        topArea = ProjectRoadmapService.getTopLevelAreaPath(entry.areaPath);
-        entry.hide =
-          areaPaths.indexOf(topArea) === -1 ||
-          this.isHiddenWorkItem(workItemTypes, entry.type);
-      });
-    }
+    // Work Item Types.
+    const workItemTypes: string[] = this.filter.getFilterItemState(
+      ProjectRoadmap.FILTER_KEY_WIT
+    )?.value;
+
+    const workingAvailableTags: Set<string> = new Set();
+
+    // tags.
+    const visibleTags: string[] = this.filter.getFilterItemState(
+      ProjectRoadmap.FILTER_KEY_TAGS
+    )?.value;
+
+    this.pageData.roadmap.forEach((entry) => {
+      entry.hide =
+        this.isHiddenWorkItemAreaPath(areaPaths, entry) ||
+        this.isHiddenWorkItemType(workItemTypes, entry.type) ||
+        this.isHiddenWorkItemKeyword(keyword, entry) ||
+        this.isHiddenWorkItemTag(visibleTags, entry);
+      if (entry.tags) {
+        for (let tag of entry.tags) {
+          workingAvailableTags.add(tag);
+        }
+      }
+    });
+
+    this.availableTags = Array.from(workingAvailableTags);
     this.populateGantt();
     this.refreshState();
   }
 
   /**
-   * Checks to see if we need to display the work item or not.
+   * Check if the work item is hidden based off a tag.
    *
-   * @param visibleWorkItems work items we should show. An empty array results in all visible
-   * @param currentWorkItemType work type to check
-   * @returns true to show work item or false to hide it.
+   * @param visibleTags tags that should be shwon
+   * @param currentTask the current task
+   * @returns true if task should be hidden.
    */
-  private isHiddenWorkItem(visibleWorkItems:string[], currentWorkItemType:string):boolean {
-    return visibleWorkItems.length !== 0 &&
-           visibleWorkItems.indexOf(currentWorkItemType) === -1
+  private isHiddenWorkItemTag(
+    visibleTags: string[] | undefined,
+    currentTask: ProjectRoadmapTaskEntity
+  ): boolean {
+    if (visibleTags && visibleTags.length > 0) {
+      if (currentTask.tags.length === 0) {
+        return true;
+      }
+
+      for (const t of visibleTags) {
+        if (currentTask.tags.indexOf(t) !== -1) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Is the area path hidden.
+   *
+   * @param areaPaths area paths to show or empty to show all
+   * @param currentTask the current task
+   * @returns true if task should be hidden.
+   */
+  private isHiddenWorkItemAreaPath(
+    areaPaths: string[],
+    currentTask: ProjectRoadmapTaskEntity
+  ): boolean {
+    if (areaPaths && areaPaths.length > 0) {
+      let topArea: string;
+      topArea = ProjectRoadmapService.getTopLevelAreaPath(currentTask.areaPath);
+      return areaPaths.indexOf(topArea) === -1;
+    }
+
+    return false;
+  }
+
+  /**
+   * Checks to see if we should hide a work item based on title.
+   *
+   * @param keyword the keyword
+   * @param currentTask the current task
+   * @returns true to hide the task, otherwise false.
+   */
+  private isHiddenWorkItemKeyword(
+    keyword: string | undefined,
+    currentTask: ProjectRoadmapTaskEntity
+  ): boolean {
+    // Presently we hide just on title. Later on, if needed, we can expand the keyword to include other task information.
+    if (keyword) {
+      return (
+        currentTask.title.toLowerCase().indexOf(keyword.toLowerCase()) === -1
+      );
+    }
+
+    // Default is show
+    return false;
+  }
+
+  /**
+   * Checks to see if we need to display the work item type or not.
+   *
+   * @param visibleWorkItemTypes work items we should show. An empty array results in all visible
+   * @param currentWorkItemType work type to check
+   * @returns true to show work item type or false to hide it.
+   */
+  private isHiddenWorkItemType(
+    visibleWorkItemTypes: string[],
+    currentWorkItemType: string
+  ): boolean {
+    return (
+      visibleWorkItemTypes.length !== 0 &&
+      visibleWorkItemTypes.indexOf(currentWorkItemType) === -1
+    );
   }
 
   /**
@@ -239,13 +339,20 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private async refreshGantt(): Promise<void> {
     // Force the page to show page loading ...
     this.pageData.roadmap = [];
+    this.pageData.isProperlyConfigured = true;
     this.refreshState();
 
-    this.pageData.roadmap = await ProjectRoadmapService.createGantt(
-      // For future use to query historic roadmaps.
-      this.pageData.asOf
-    );
-    this.filterRoadmap();
+    try {
+      this.pageData.roadmap = await ProjectRoadmapService.createGantt(
+        // For future use to query historic roadmaps.
+        this.pageData.asOf
+      );
+
+      this.filterRoadmap();
+    } catch (e) {
+      this.pageData.isProperlyConfigured = false;
+      this.refreshState();
+    }
   }
 
   /**
@@ -291,18 +398,21 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private async populateAreaPath(): Promise<void> {
     const areaPaths = await ProjectRoadmapService.getAreaPathsForProject();
     let pathCleaned: string;
-    areaPaths.forEach((area) => {
-      // Fix the area path as this call generates /<project>/Area/<area path>.
-      // We want <project>/<area path>
-      pathCleaned = area.path.replace("\\Area\\", "\\");
-      pathCleaned = pathCleaned.substring(1);
 
-      this.areaPathList.push({
-        id: "itrp-pm-roadmap.areapath." + area.name,
-        data: pathCleaned,
-        text: area.name,
+    if (areaPaths) {
+      areaPaths.forEach((area) => {
+        // Fix the area path as this call generates /<project>/Area/<area path>.
+        // We want <project>/<area path>
+        pathCleaned = area.path.replace("\\Area\\", "\\");
+        pathCleaned = pathCleaned.substring(1);
+
+        this.areaPathList.push({
+          id: "itrp-pm-roadmap.areapath." + area.name,
+          data: pathCleaned,
+          text: area.name,
+        });
       });
-    });
+    }
   }
 
   /**
@@ -310,14 +420,12 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    *
    * @returns the list of backlog levels.
    */
-  private getGranularityLevels(): IListBoxItem[] {
-    const listItems:IListBoxItem[] = [];
+  private getBacklogLevelItems(): IListBoxItem[] {
+    const listItems: IListBoxItem[] = [];
 
     for (const b of this.backlogLevels) {
       for (const w of b.workItemTypes) {
-        listItems.push(
-          { id: w, text: w, data: w}
-        );
+        listItems.push({ id: w, text: w, data: w });
       }
     }
 
@@ -340,14 +448,17 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    */
   private populateGantt(): void {
     const tasks: GanttTask[] = [];
-    const parentChildMap:Map<string, string> = new Map();
+    const parentChildMap: Map<string, string> = new Map();
     const allLinks: GanttLink[] = [];
     const visibleLinks: GanttLink[] = [];
     const visibleIDs: string[] = [];
 
     this.pageData.roadmap.forEach((azureItem) => {
       if (azureItem.parent) {
-        parentChildMap.set(azureItem.id.toString(), azureItem.parent.toString());
+        parentChildMap.set(
+          azureItem.id.toString(),
+          azureItem.parent.toString()
+        );
       }
 
       if (!azureItem.hide) {
@@ -360,7 +471,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     // Make sure all tasks do exist (if hidden, we need to remove parent).
     tasks.forEach((item) => {
       if (item.parent) {
-        let currentParentId:string | undefined;
+        let currentParentId: string | undefined;
         currentParentId = item.parent;
 
         // See if we can find a visible ancestor.
@@ -405,8 +516,91 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
         </CustomHeader>
         <div className="page-content-left page-content-right page-content-top">
           {
+            /** Print this on misconfiguration. */
+            this.state.isProperlyConfigured === false && (
+              <div>
+                <MessageCard
+                  className="flex-self-stretch"
+                  severity={MessageCardSeverity.Error}
+                >
+                  Please ensure the project is properly configured for Roadmaps.
+                </MessageCard>
+                <p>Configure your project by:</p>
+                <ol>
+                  <li style={{ listStyle: "inherit", paddingBottom: "5px" }}>
+                    Create the query folder structure{" "}
+                    <em>Automation &gt; Roadmap</em> insde the{" "}
+                    <em>Shared Queries</em>.
+                  </li>
+                  <li style={{ listStyle: "inherit" }}>
+                    Create a new query named <em>Latest</em> and save it to
+                    folder structure{" "}
+                    <em>Shared Queries &gt; Automation &gt; Roadmap</em>.
+                    <ul style={{ paddingLeft: "15px" }}>
+                      <li style={{ listStyle: "inherit" }}>
+                        <b>Type of Query</b>: Either{" "}
+                        <em>Flat list of work items</em> or{" "}
+                        <em>Tree of work items</em>
+                      </li>
+                      <li style={{ listStyle: "inherit" }}>
+                        Only when Type of Query: <em>Tree of work items</em>,
+                        choose Fiilter Options:{" "}
+                        <em>Match top-level work items first</em> and Type of
+                        Tree: <em>Parent/Child</em>
+                      </li>
+                      <li style={{ listStyle: "inherit" }}>
+                        Under Columns Options, please add at least:
+                        <ul style={{ paddingLeft: "15px" }}>
+                          <li style={{ listStyle: "inherit" }}>ID</li>
+                          <li style={{ listStyle: "inherit" }}>
+                            Work Item Type
+                          </li>
+                          <li style={{ listStyle: "inherit" }}>Title</li>
+                          <li style={{ listStyle: "inherit" }}>Description</li>
+                          <li style={{ listStyle: "inherit" }}>
+                            Start Date - used to determine start date of work
+                            items
+                          </li>
+                          <li style={{ listStyle: "inherit" }}>
+                            Target Date - used to determine finish date of work
+                            items
+                          </li>
+                          <li style={{ listStyle: "inherit" }}>
+                            Parent - only required if Type of Query is{" "}
+                            <em>Tree of work items</em>
+                          </li>
+                          <li style={{ listStyle: "inherit" }}>Area Path</li>
+                          <li style={{ listStyle: "inherit" }}>Iteration</li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </li>
+                </ol>
+                <p>
+                  Note: A <b>Type of Query</b>: <em>Tree of work items</em> has
+                  the following benefits:
+                </p>
+                <ul>
+                  <li style={{ listStyle: "inherit" }}>
+                    Calculation Start/Target Date based on
+                    grandchildren/children.
+                  </li>
+                  <li style={{ listStyle: "inherit" }}>
+                    Calculation of progress percentage based on work items
+                    "completed". A "completed" item is either in the state
+                    category "Removed" or "Completed".
+                  </li>
+                  <li style={{ listStyle: "inherit" }}>
+                    Show/Hide work item types in the middle of the tree hierachy
+                    and still retain a tree structure.
+                  </li>
+                </ul>
+              </div>
+            )
+          }
+          {
             /** Print this on no data. */
-            this.state.roadmap.length === 0 && (
+            this.state.roadmap.length === 0 && this.state.isProperlyConfigured && (
               <div className="flex-row v-align-middle justify-center full-size">
                 <Spinner size={SpinnerSize.large} label="Please wait ..." />
               </div>
@@ -416,29 +610,48 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
             /**
              * Print on data.
              */
-            this.state.roadmap.length > 0 && (
+            this.state.roadmap.length > 0 && this.state.isProperlyConfigured && (
               <div className="flex-grow">
                 <FilterBar filter={this.filter}>
-                  <DropdownFilterBarItem
-                    filterItemKey="workItemTypes"
+                  <KeywordFilterBarItem
+                    filterItemKey={ProjectRoadmap.FILTER_KEY_KEYWORD}
                     filter={this.filter}
-                    items={this.getGranularityLevels()}
+                    placeholder="Filter by text contained in title (case-insensitive)"
+                  />
+                  <DropdownFilterBarItem
+                    showFilterBox={true}
+                    filterItemKey={ProjectRoadmap.FILTER_KEY_WIT}
+                    filter={this.filter}
+                    items={this.getBacklogLevelItems()}
                     selection={this.filterWorkItem}
                     placeholder="Work Item Type"
                   />
                   <DropdownFilterBarItem
-                    filterItemKey="areaPath"
+                    showFilterBox={true}
+                    filterItemKey={ProjectRoadmap.FILTER_KEY_TAGS}
                     filter={this.filter}
-                    items={this.areaPathList}
-                    selection={this.filterAreaPath}
-                    placeholder="Area Path"
+                    items={this.availableTags}
+                    selection={this.filterTag}
+                    placeholder="Tags"
                   />
+
+                  {this.areaPathList.length > 0 && (
+                    // Only allow filtering area path if an area path does exist for a project.
+                    <DropdownFilterBarItem
+                      showFilterBox={true}
+                      filterItemKey={ProjectRoadmap.FILTER_KEY_AREAPATH}
+                      filter={this.filter}
+                      items={this.areaPathList}
+                      selection={this.filterAreaPath}
+                      placeholder="Area Path"
+                    />
+                  )}
                 </FilterBar>
                 {
                   /**
                    * Show the gantt chart if we have data.
                    */
-                  this.pageData.ganttConfig.data.tasks.length > 0 && (
+                  this.state.ganttConfig.data.tasks.length > 0 && (
                     <Gantt
                       config={this.pageData.ganttConfig}
                       key={this.forceRefreshFlipper}
@@ -449,7 +662,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
                   /**
                    * Show no results if a filter or search results has no data.
                    */
-                  this.pageData.ganttConfig.data.tasks.length === 0 && (
+                  this.state.ganttConfig.data.tasks.length === 0 && (
                     <ZeroData
                       className="flex-row v-align-middle justify-center full-size"
                       primaryText="No data."
@@ -477,6 +690,16 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
                 ]}
               >
                 <div style={{ height: "100%" }}>
+                  <div className="flex-center">
+                    <Image
+                      alt="ESDC IT Research and Prototyping Logo"
+                      src={"../static/img/logo.png"}
+                      width={128}
+                      height={128}
+                      className={"padding-16"}
+                    />
+                    A product initially developed by ESDC IT Research Division.
+                  </div>
                   <p>
                     This is a MVP and improvements will be added as required or
                     upon{" "}
