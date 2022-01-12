@@ -18,10 +18,10 @@
       - State
       - Assigned To
       - Start Date
-      - Finish Date
-      - Closed Date
+      - Target Date
       - Parent
       - Area Path
       - Description
+      - Iteration Path
    - Click on Column Options and for Sorting, choose the following:
        - Backlog Priority

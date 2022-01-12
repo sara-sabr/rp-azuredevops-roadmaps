@@ -27,6 +27,8 @@ import {
 import { HeaderCommandBar } from "azure-devops-ui/HeaderCommandBar";
 import { IMenuItem } from "azure-devops-ui/Menu";
 import { IListBoxItem } from "azure-devops-ui/ListBox";
+import { Image } from "azure-devops-ui/Image";
+import { MessageCard, MessageCardSeverity } from "azure-devops-ui/MessageCard";
 import { Page } from "azure-devops-ui/Page";
 import { Panel } from "azure-devops-ui/Panel";
 import { Spinner, SpinnerSize } from "azure-devops-ui/Spinner";
@@ -50,11 +52,6 @@ import { WorkItemProcessService } from "@esdc-it-rp/azuredevops-common";
  */
 class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private commandButtons: ProjectRoadmapCommandMenu;
-
-  /**
-   * Singleton instance.
-   */
-  private static singleton: ProjectRoadmap;
 
   /**
    * The current filer being applied.
@@ -107,6 +104,11 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private isAboutOpen = new ObservableValue<boolean>(false);
 
   /**
+   * Sets to true if the environment is properly configured.
+   */
+  private isProperlyConfigured = true;
+
+  /**
    * Constructor
    *
    * @param props the properties
@@ -129,16 +131,6 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     this.state = this.pageData;
     this.initEvents();
     this.setupFilter();
-    ProjectRoadmap.singleton = this;
-  }
-
-  /**
-   * Get the singleton instance.
-   *
-   * @returns the singleton
-   */
-  static getInstance(): ProjectRoadmap {
-    return ProjectRoadmap.singleton;
   }
 
   /**
@@ -241,11 +233,18 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     this.pageData.roadmap = [];
     this.refreshState();
 
-    this.pageData.roadmap = await ProjectRoadmapService.createGantt(
-      // For future use to query historic roadmaps.
-      this.pageData.asOf
-    );
-    this.filterRoadmap();
+    try {
+      this.pageData.roadmap = await ProjectRoadmapService.createGantt(
+        // For future use to query historic roadmaps.
+        this.pageData.asOf
+      );
+
+      this.isProperlyConfigured = true;
+      this.filterRoadmap();
+    } catch (e) {
+      this.isProperlyConfigured = false;
+      this.refreshState();
+    }
   }
 
   /**
@@ -291,18 +290,21 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private async populateAreaPath(): Promise<void> {
     const areaPaths = await ProjectRoadmapService.getAreaPathsForProject();
     let pathCleaned: string;
-    areaPaths.forEach((area) => {
-      // Fix the area path as this call generates /<project>/Area/<area path>.
-      // We want <project>/<area path>
-      pathCleaned = area.path.replace("\\Area\\", "\\");
-      pathCleaned = pathCleaned.substring(1);
 
-      this.areaPathList.push({
-        id: "itrp-pm-roadmap.areapath." + area.name,
-        data: pathCleaned,
-        text: area.name,
+    if (areaPaths) {
+      areaPaths.forEach((area) => {
+        // Fix the area path as this call generates /<project>/Area/<area path>.
+        // We want <project>/<area path>
+        pathCleaned = area.path.replace("\\Area\\", "\\");
+        pathCleaned = pathCleaned.substring(1);
+
+        this.areaPathList.push({
+          id: "itrp-pm-roadmap.areapath." + area.name,
+          data: pathCleaned,
+          text: area.name,
+        });
       });
-    });
+    }
   }
 
   /**
@@ -310,7 +312,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    *
    * @returns the list of backlog levels.
    */
-  private getGranularityLevels(): IListBoxItem[] {
+  private getBacklogLevelItems(): IListBoxItem[] {
     const listItems:IListBoxItem[] = [];
 
     for (const b of this.backlogLevels) {
@@ -405,8 +407,57 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
         </CustomHeader>
         <div className="page-content-left page-content-right page-content-top">
           {
+            /** Print this on misconfiguration. */
+            this.isProperlyConfigured === false && (
+              <div>
+                <MessageCard
+                  className="flex-self-stretch"
+                  severity={MessageCardSeverity.Error}
+              >
+                  Please ensure the project is properly configured for Roadmaps.
+              </MessageCard>
+              <p>
+                Configure your project by:
+              </p>
+              <ol>
+                <li style={{listStyle: "inherit", paddingBottom: "5px"}}>
+                  Create the query folder structure <em>Automation &gt; Roadmap</em> insde the <em>Shared Queries</em>.
+                </li>
+                <li style={{listStyle: "inherit"}}>
+                   Create a new query named <em>Latest</em> and save it to folder structure <em>Shared Queries &gt; Automation &gt; Roadmap</em>.
+                   <ul style={{paddingLeft: "15px"}}>
+                     <li style={{listStyle: "inherit"}}><b>Type of Query</b>: Either <em>Flat list of work items</em> or <em>Tree of work items</em></li>
+                     <li style={{listStyle: "inherit"}}>Only when Type of Query: <em>Tree of work items</em>, choose Fiilter Options: <em>Match top-level work items first</em> and Type of Tree: <em>Parent/Child</em></li>
+                     <li style={{listStyle: "inherit"}}>Under Columns Options, please add at least:
+                      <ul style={{paddingLeft: "15px"}}>
+                        <li style={{listStyle: "inherit"}}>ID</li>
+                        <li style={{listStyle: "inherit"}}>Work Item Type</li>
+                        <li style={{listStyle: "inherit"}}>Title</li>
+                        <li style={{listStyle: "inherit"}}>Description</li>
+                        <li style={{listStyle: "inherit"}}>Start Date - used to determine start date of work items</li>
+                        <li style={{listStyle: "inherit"}}>Target Date - used to determine finish date of work items</li>
+                        <li style={{listStyle: "inherit"}}>Parent - only required if Type of Query is <em>Tree of work items</em></li>
+                        <li style={{listStyle: "inherit"}}>Area Path</li>
+                        <li style={{listStyle: "inherit"}}>Iteration</li>
+                      </ul>
+                     </li>
+                   </ul>
+                </li>
+              </ol>
+              <p>
+                Note: A <b>Type of Query</b>: <em>Tree of work items</em> has the following benefits:
+              </p>
+              <ul>
+                <li style={{listStyle: "inherit"}}>Calculation Start/Target Date based on grandchildren/children.</li>
+                <li style={{listStyle: "inherit"}}>Calculation of progress percentage based on work items "completed". A "completed" item is either in the state category "Removed" or "Completed".</li>
+                <li style={{listStyle: "inherit"}}>Show/Hide work item types in the middle of the tree hierachy and still retain a tree structure.</li>
+              </ul>
+            </div>
+            )
+          }
+          {
             /** Print this on no data. */
-            this.state.roadmap.length === 0 && (
+            this.state.roadmap.length === 0 && this.isProperlyConfigured && (
               <div className="flex-row v-align-middle justify-center full-size">
                 <Spinner size={SpinnerSize.large} label="Please wait ..." />
               </div>
@@ -422,10 +473,12 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
                   <DropdownFilterBarItem
                     filterItemKey="workItemTypes"
                     filter={this.filter}
-                    items={this.getGranularityLevels()}
+                    items={this.getBacklogLevelItems()}
                     selection={this.filterWorkItem}
                     placeholder="Work Item Type"
                   />
+                  {this.areaPathList.length > 0 &&
+                  // Only allow filtering area path if an area path does exist for a project.
                   <DropdownFilterBarItem
                     filterItemKey="areaPath"
                     filter={this.filter}
@@ -433,6 +486,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
                     selection={this.filterAreaPath}
                     placeholder="Area Path"
                   />
+                  }
                 </FilterBar>
                 {
                   /**
@@ -477,6 +531,10 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
                 ]}
               >
                 <div style={{ height: "100%" }}>
+                <div className="flex-center">
+                    <Image alt="ESDC IT Research and Prototyping Logo" src={"../static/img/logo.png"} width={128} height={128} className={"padding-16"}/>
+                    A product initially developed by ESDC IT Research Division.
+                  </div>
                   <p>
                     This is a MVP and improvements will be added as required or
                     upon{" "}

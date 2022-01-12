@@ -17,11 +17,11 @@ This Azure Boards extension provides roadmap capability for Epic > Feature > PBI
       - State
       - Assigned To
       - Start Date
-      - Finish Date
-      - Closed Date
+      - Target Date
       - Parent
       - Area Path
       - Description
+      - Iteration Path
    - Click on Column Options and for Sorting, choose the following:
        - Backlog Priority
 
