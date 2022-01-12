@@ -28,6 +28,7 @@ import { HeaderCommandBar } from "azure-devops-ui/HeaderCommandBar";
 import { IMenuItem } from "azure-devops-ui/Menu";
 import { IListBoxItem } from "azure-devops-ui/ListBox";
 import { Image } from "azure-devops-ui/Image";
+import { KeywordFilterBarItem } from "azure-devops-ui/TextFilterBarItem";
 import { MessageCard, MessageCardSeverity } from "azure-devops-ui/MessageCard";
 import { Page } from "azure-devops-ui/Page";
 import { Panel } from "azure-devops-ui/Panel";
@@ -37,20 +38,36 @@ import { ObservableValue } from "azure-devops-ui/Core/Observable";
 import { ZeroData } from "azure-devops-ui/ZeroData";
 
 // Project level.
-import { ProjectRoadmapCommandMenu } from "./ProjectRoadmapCommandMenu.ui";
-import { ProjectRoadmapService } from "./ProjectRoadmap.service";
+import { BacklogEntity } from "./Backlog.entity";
+import { DisplayInterval } from "./DisplayInterval.enum";
 import { IProjectRoadmap } from "./IProjectRoadmap.state";
 import Gantt from "./components/Gantt/Gantt";
-import { GanttTask } from "./components/Gantt/GanttTask";
-import { DisplayInterval } from "./DisplayInterval.enum";
 import { GanttLink } from "./components/Gantt/GanttLink";
-import { BacklogEntity } from "./Backlog.entity";
+import { GanttTask } from "./components/Gantt/GanttTask";
+import { ProjectRoadmapCommandMenu } from "./ProjectRoadmapCommandMenu.ui";
+import { ProjectRoadmapService } from "./ProjectRoadmap.service";
 import { WorkItemProcessService } from "@esdc-it-rp/azuredevops-common";
+import { ProjectRoadmapTaskEntity } from "./ProjectRoadmapTask.entity";
 
 /**
  * The status report page.
  */
 class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
+  /**
+   * Filter key for Area Path.
+   */
+  private static readonly FILTER_KEY_AREAPATH = "areaPath";
+
+  /**
+   * Filter key for Work Item Type.
+   */
+  private static readonly FILTER_KEY_WIT = "wit";
+
+  /**
+   * Filter key for keyword.
+   */
+  private static readonly FILTER_KEY_KEYWORD = "keyword";
+
   private commandButtons: ProjectRoadmapCommandMenu;
 
   /**
@@ -139,12 +156,12 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private setupFilter(): void {
     var that = this;
 
-    that.filter.setFilterItemState("areaPath", {
+    that.filter.setFilterItemState(ProjectRoadmap.FILTER_KEY_AREAPATH, {
       value: [],
       operator: FilterOperatorType.and,
     });
 
-    that.filter.setFilterItemState("workItemTypes", {
+    that.filter.setFilterItemState(ProjectRoadmap.FILTER_KEY_WIT, {
       value: [],
     });
 
@@ -165,39 +182,69 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private filterRoadmap() {
     // Area Filtering
     const areaPaths: string[] =
-      this.filter.getFilterItemState("areaPath")?.value;
+      this.filter.getFilterItemState(ProjectRoadmap.FILTER_KEY_AREAPATH)?.value;
+
+    // Keyword
+    const keyword:string = this.filter.getFilterItemState(ProjectRoadmap.FILTER_KEY_KEYWORD)?.value;
 
     // Now hide the levels.
     const workItemTypes: string[] =
-      this.filter.getFilterItemState("workItemTypes")?.value;
+      this.filter.getFilterItemState(ProjectRoadmap.FILTER_KEY_WIT)?.value;
 
-    if (areaPaths.length === 0) {
-      this.pageData.roadmap.forEach((entry) => {
-        entry.hide = this.isHiddenWorkItem(workItemTypes, entry.type);
-      });
-    } else {
-      let topArea: string;
-      this.pageData.roadmap.forEach((entry) => {
-        topArea = ProjectRoadmapService.getTopLevelAreaPath(entry.areaPath);
-        entry.hide =
-          areaPaths.indexOf(topArea) === -1 ||
-          this.isHiddenWorkItem(workItemTypes, entry.type);
-      });
-    }
+    this.pageData.roadmap.forEach((entry) => {
+      entry.hide =
+        this.isHiddenWorkItemAreaPath(areaPaths, entry) ||
+        this.isHiddenWorkItemType(workItemTypes, entry.type) ||
+        this.isHiddenWorkItemKeyword(keyword, entry);
+    });
     this.populateGantt();
     this.refreshState();
   }
 
   /**
-   * Checks to see if we need to display the work item or not.
+   * Is the area path hidden.
    *
-   * @param visibleWorkItems work items we should show. An empty array results in all visible
-   * @param currentWorkItemType work type to check
-   * @returns true to show work item or false to hide it.
+   * @param areaPaths area paths to show or empty to show all
+   * @param currentTask the current task
+   * @returns true if task should be hidden.
    */
-  private isHiddenWorkItem(visibleWorkItems:string[], currentWorkItemType:string):boolean {
-    return visibleWorkItems.length !== 0 &&
-           visibleWorkItems.indexOf(currentWorkItemType) === -1
+  private isHiddenWorkItemAreaPath(areaPaths: string[], currentTask:ProjectRoadmapTaskEntity):boolean {
+    if (areaPaths && areaPaths.length > 0) {
+      let topArea: string;
+      topArea = ProjectRoadmapService.getTopLevelAreaPath(currentTask.areaPath);
+      return areaPaths.indexOf(topArea) === -1;
+    }
+
+    return false;
+  }
+
+  /**
+   * Checks to see if we should hide a work item based on title.
+   *
+   * @param keyword the keyword
+   * @param currentTask the current task
+   * @returns true to hide the task, otherwise false.
+   */
+  private isHiddenWorkItemKeyword(keyword:string | undefined, currentTask:ProjectRoadmapTaskEntity):boolean {
+    // Presently we hide just on title. Later on, if needed, we can expand the keyword to include other task information.
+    if (keyword) {
+      return (currentTask.title.toLowerCase().indexOf(keyword.toLowerCase()) === -1)
+    }
+
+    // Default is show
+    return false;
+  }
+
+  /**
+   * Checks to see if we need to display the work item type or not.
+   *
+   * @param visibleWorkItemTypes work items we should show. An empty array results in all visible
+   * @param currentWorkItemType work type to check
+   * @returns true to show work item type or false to hide it.
+   */
+  private isHiddenWorkItemType(visibleWorkItemTypes:string[], currentWorkItemType:string):boolean {
+    return visibleWorkItemTypes.length !== 0 &&
+           visibleWorkItemTypes.indexOf(currentWorkItemType) === -1
   }
 
   /**
@@ -470,8 +517,11 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
             this.state.roadmap.length > 0 && (
               <div className="flex-grow">
                 <FilterBar filter={this.filter}>
+                  <KeywordFilterBarItem filterItemKey={ProjectRoadmap.FILTER_KEY_KEYWORD}
+                    filter={this.filter}
+                    placeholder="Filter by text contained in title (case-insensitive)"/>
                   <DropdownFilterBarItem
-                    filterItemKey="workItemTypes"
+                    filterItemKey={ProjectRoadmap.FILTER_KEY_WIT}
                     filter={this.filter}
                     items={this.getBacklogLevelItems()}
                     selection={this.filterWorkItem}
@@ -480,7 +530,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
                   {this.areaPathList.length > 0 &&
                   // Only allow filtering area path if an area path does exist for a project.
                   <DropdownFilterBarItem
-                    filterItemKey="areaPath"
+                    filterItemKey={ProjectRoadmap.FILTER_KEY_AREAPATH}
                     filter={this.filter}
                     items={this.areaPathList}
                     selection={this.filterAreaPath}
