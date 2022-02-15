@@ -37,6 +37,7 @@ div.gantt-qi-description {
     max-width: 540px;
     max-height: 300px;
     overflow: auto;
+    white-space: pre-wrap;
 }
 
 /**
