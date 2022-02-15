@@ -56,3 +56,7 @@ div.gantt-qi-description {
     border-width: 2px;
     border-color: black !important;
 }
+
+.gantt_cal_qi_tcontent {
+    white-space: pre-wrap;
+}
