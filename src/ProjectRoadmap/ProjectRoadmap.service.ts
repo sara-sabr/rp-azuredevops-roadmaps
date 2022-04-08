@@ -131,6 +131,10 @@ export class ProjectRoadmapService {
       return;
     }
 
+    if (node.isTopLevelNode() && node.data) {
+      node.data.top = true;
+    }
+
     for (const child of node.children) {
       ProjectRoadmapService.traverse(child, result);
     }
@@ -251,7 +255,6 @@ export class ProjectRoadmapService {
     for (let entry of projectRoadmaps) {
       currentParentId = entry.parent;
       while (currentParentId !== 0 && currentParentId !== undefined) {
-        entry.project = currentParentId.toString();
         currentNode = roadmapTree.nodeMap?.get(currentParentId);
         if (currentNode && currentNode.data) {
           currentParentId = currentNode.data.parent;

@@ -30,6 +30,11 @@ import { KeywordFilterBarItem } from "azure-devops-ui/TextFilterBarItem";
 import { MessageCard, MessageCardSeverity } from "azure-devops-ui/MessageCard";
 import { Page } from "azure-devops-ui/Page";
 import { Panel } from "azure-devops-ui/Panel";
+import {
+  RadioButton,
+  RadioButtonGroup,
+  RadioButtonGroupDirection,
+} from "azure-devops-ui/RadioButton";
 import { Spinner, SpinnerSize } from "azure-devops-ui/Spinner";
 import { Observer } from "azure-devops-ui/Observer";
 import { ObservableValue } from "azure-devops-ui/Core/Observable";
@@ -72,6 +77,26 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private static readonly FILTER_KEY_TAGS = "tags";
 
   /**
+   * Filter tag mode where all items must have any of the tags.
+   */
+  private static readonly FILTER_TAG_MODE_ANY = "filterTagAny";
+
+  /**
+   * Filter tag mode where all items must have all tags.
+   */
+  private static readonly FILTER_TAG_MODE_ALL = "filterTagAll";
+
+  /**
+   * Filter tag mode where only the top level item has any of the tags.
+   */
+  private static readonly FILTER_TAG_MODE_ANY_TOP = "filterTagAnyTop";
+
+  /**
+   * Filter tag mode where only the top level item has all tags.
+   */
+  private static readonly FILTER_TAG_MODE_ALL_TOP = "filterTagAllTop";
+
+  /**
    * Menu bar buttons.
    */
   private commandButtons: ProjectRoadmapCommandMenu;
@@ -95,6 +120,15 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    * Filter for tag.
    */
   private filterTag = new DropdownMultiSelection();
+
+  /**
+   * Filter for tag mode. Root or all.
+   * - All: All items must have the tag.
+   * - Top: Only the top level needs the tag.
+   */
+  private filterTagMode = new ObservableValue<string>(
+    ProjectRoadmap.FILTER_TAG_MODE_ANY_TOP
+  );
 
   /**
    * Current page data being used by react.
@@ -175,6 +209,10 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     that.filter.subscribe(() => {
       that.filterRoadmap();
     }, FILTER_CHANGE_EVENT);
+
+    that.filterTagMode.subscribe(() => {
+      that.filterRoadmap();
+    });
   }
 
   /**
@@ -197,18 +235,23 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     )?.value;
 
     const workingAvailableTags: Set<string> = new Set();
+    const visibleParents: Set<number> = new Set();
 
     // tags.
     const visibleTags: string[] = this.filter.getFilterItemState(
       ProjectRoadmap.FILTER_KEY_TAGS
     )?.value;
 
+    // Loop over tasks to determine visibility and build up tag list.
     this.pageData.roadmap.forEach((entry) => {
+      // See if it hidden.
       entry.hide =
         this.isHiddenWorkItemAreaPath(areaPaths, entry) ||
         this.isHiddenWorkItemType(workItemTypes, entry.type) ||
         this.isHiddenWorkItemKeyword(keyword, entry) ||
-        this.isHiddenWorkItemTag(visibleTags, entry);
+        this.isHiddenWorkItemTag(visibleTags, entry, visibleParents);
+
+      // Add to tag list.
       if (entry.tags) {
         for (let tag of entry.tags) {
           workingAvailableTags.add(tag);
@@ -224,23 +267,56 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   /**
    * Check if the work item is hidden based off a tag.
    *
-   * @param visibleTags tags that should be shwon
+   * @param visibleTags tags that should be shown
    * @param currentTask the current task
    * @returns true if task should be hidden.
    */
   private isHiddenWorkItemTag(
     visibleTags: string[] | undefined,
-    currentTask: ProjectRoadmapTaskEntity
+    currentTask: ProjectRoadmapTaskEntity,
+    visibleParents: Set<number>
   ): boolean {
     if (visibleTags && visibleTags.length > 0) {
+      if (
+        (this.filterTagMode.value === ProjectRoadmap.FILTER_TAG_MODE_ANY_TOP ||
+          this.filterTagMode.value ===
+            ProjectRoadmap.FILTER_TAG_MODE_ALL_TOP) &&
+        !currentTask.top
+      ) {
+        if (visibleParents.has(currentTask.parent)) {
+          visibleParents.add(currentTask.id);
+          return false;
+        }
+
+        return true;
+      }
+
       if (currentTask.tags.length === 0) {
         return true;
       }
 
+      const filterAny =
+        this.filterTagMode.value === ProjectRoadmap.FILTER_TAG_MODE_ANY ||
+        this.filterTagMode.value === ProjectRoadmap.FILTER_TAG_MODE_ANY_TOP;
+      let matches = 0;
+
+      // Current task must have the tag.
       for (const t of visibleTags) {
         if (currentTask.tags.indexOf(t) !== -1) {
-          return false;
+          matches++;
+
+          if (filterAny) {
+            // Matched one tag.
+            visibleParents.add(currentTask.id);
+            return false;
+          }
         }
+      }
+
+      if (!filterAny && visibleTags.length === matches) {
+        // Matched all tags.
+        visibleParents.add(currentTask.id);
+        return false;
       }
 
       return true;
@@ -390,6 +466,41 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     await WorkItemProcessService.getWorkItemTypes();
     this.backlogLevels = await ProjectRoadmapService.getBacklogLevels();
     await this.refreshGantt();
+  }
+
+  private renderFilterMode(): JSX.Element {
+    return (
+      <div className="flex-grow center">
+        <RadioButtonGroup
+          direction={RadioButtonGroupDirection.Vertical}
+          onSelect={(selectedId) => (this.filterTagMode.value = selectedId)}
+          selectedButtonId={this.filterTagMode}
+          text={"That have:"}
+        >
+          <RadioButton
+            id={ProjectRoadmap.FILTER_TAG_MODE_ANY}
+            text="Any tag"
+            key={ProjectRoadmap.FILTER_TAG_MODE_ANY}
+          />
+          <RadioButton
+            id={ProjectRoadmap.FILTER_TAG_MODE_ALL}
+            text="All tags"
+            key={ProjectRoadmap.FILTER_TAG_MODE_ALL}
+          />
+          <RadioButton
+            id={ProjectRoadmap.FILTER_TAG_MODE_ANY_TOP}
+            text="Top level any tag"
+            key={ProjectRoadmap.FILTER_TAG_MODE_ANY_TOP}
+          />
+          <RadioButton
+            id={ProjectRoadmap.FILTER_TAG_MODE_ALL_TOP}
+            text="Top level all tags"
+            key={ProjectRoadmap.FILTER_TAG_MODE_ALL_TOP}
+          />
+        </RadioButtonGroup>
+        <hr />
+      </div>
+    );
   }
 
   /**
@@ -627,6 +738,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
                     placeholder="Work Item Type"
                   />
                   <DropdownFilterBarItem
+                    renderBeforeContent={this.renderFilterMode.bind(this)}
                     showFilterBox={true}
                     filterItemKey={ProjectRoadmap.FILTER_KEY_TAGS}
                     filter={this.filter}
