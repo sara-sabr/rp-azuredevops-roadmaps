@@ -24,11 +24,6 @@ export class ProjectRoadmapTaskEntity extends WorkItemBaseWithPredecessor {
   progress: number = 0;
 
   /**
-   * The EPIC ID.
-   */
-  project?: string;
-
-  /**
    * The dependencies.
    */
   dependencies: string[] = [];
@@ -87,6 +82,11 @@ export class ProjectRoadmapTaskEntity extends WorkItemBaseWithPredecessor {
    * Tags applied to this work item.
    */
   tags: string[] = [];
+
+  /**
+   * True if this was a top node returned from the search results.
+   */
+  top: boolean = false;
 
   /**
    * @inheritdoc

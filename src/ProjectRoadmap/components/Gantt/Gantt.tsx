@@ -181,11 +181,12 @@ export default class Gantt extends Component<
     };
 
     // Default is to substring at 50, prevent that.
-    gantt.templates.quick_info_title = function(
+    gantt.templates.quick_info_title = function (
       start: Date,
       end: Date,
-      task: GanttTask){ 
-      return task.text; 
+      task: GanttTask
+    ) {
+      return task.text;
     };
 
     gantt.templates.quick_info_date = function (
