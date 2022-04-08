@@ -379,6 +379,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     currentWorkItemType: string
   ): boolean {
     return (
+      visibleWorkItemTypes && 
       visibleWorkItemTypes.length !== 0 &&
       visibleWorkItemTypes.indexOf(currentWorkItemType) === -1
     );
