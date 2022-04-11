@@ -4,10 +4,16 @@ import "./Gantt.css";
 
 // Library
 import * as React from "react";
-import { Button } from "azure-devops-ui/Button";
 import { Component } from "react";
-import { gantt } from "dhtmlx-gantt";
+
+// Azure Library
+import { Button } from "azure-devops-ui/Button";
+import { Dropdown, DropdownExpandableButton  } from "azure-devops-ui/Dropdown";
+import { DropdownSelection } from "azure-devops-ui/Utilities/DropdownSelection";
 import { TextField, TextFieldWidth } from "azure-devops-ui/TextField";
+
+// DHTMLX
+import { gantt } from "dhtmlx-gantt";
 
 // Project
 import { DisplayInterval } from "../../DisplayInterval.enum";
@@ -41,6 +47,20 @@ export default class Gantt extends Component<
   public static DATE_TO_STR = gantt.date.date_to_str(Gantt.DATE_FORMAT);
 
   /**
+   * List of chart sizes.
+   */
+  private static readonly CHART_SIZES = [
+    { id: "chart-0", text: "Chart Hidden", data: 0 },
+    { id: "chart-400", text: "Chart 1x width", data: 1 },
+    { id: "chart-800", text: "Chart 2x width", data: 2 },
+    { id: "chart-1200", text: "Chart 3x width", data: 3 },
+    { id: "chart-max", text: "Chart Full width", data: 100 }
+  ];
+
+  /** Multiplier factor for size */
+  private static readonly CHART_SIZE_MULTIPLIER = 400;
+
+  /**
    * The container.
    */
   private ganttContainer: HTMLElement | null = null;
@@ -49,6 +69,11 @@ export default class Gantt extends Component<
    * The ID requesting focus.
    */
   private focusSearchId: string = "";
+
+  /**
+   * Chart size selection, default would be 1x which is set in the constructor.
+   */
+  private chartSizeSelection = new DropdownSelection();
 
   /**
    * Constructor.
@@ -61,6 +86,9 @@ export default class Gantt extends Component<
       findId: this.focusSearchId,
     };
 
+    // Select the first option.
+    this.chartSizeSelection.select(1);
+
     gantt.config.date_format = Gantt.DATE_FORMAT;
     gantt.config.show_unscheduled = true;
     gantt.config.show_errors = false;
@@ -72,13 +100,29 @@ export default class Gantt extends Component<
     this.configureUI();
     this.configurePlugins();
     this.setScaleConfig(this.props.config.unit);
+    this.chartSizeSelection.subscribe(this.changeGridSize.bind(this), "select");
   }
 
-  public toggleGrid(visible: boolean): void {
+  /**
+   * Change the grid size.
+   * 
+   * @param selectionArray the selected index.
+   */
+  private changeGridSize(selectionArray: any) {
+    const selectedIndex = selectionArray[0].beginIndex;
+    const selection = Gantt.CHART_SIZES[selectedIndex];
     if (this.ganttContainer) {
-      gantt.config.layout = visible
-        ? gantt.config.layout_full
-        : gantt.config.layout_ganttonly;
+      
+      if (selection.data === 0) {
+        gantt.config.layout = gantt.config.layout_ganttonly;
+      } else if (selection.data === 100) {        
+        gantt.config.layout = gantt.config.layout_chartonly;        
+        gantt.config.columns[1].width = "*";
+      } else {
+        gantt.config.layout = gantt.config.layout_full;
+        gantt.config.layout.cols[0].width = selection.data * Gantt.CHART_SIZE_MULTIPLIER;
+        gantt.config.columns[1].width = "*";
+      }
       gantt.init(this.ganttContainer);
     }
   }
@@ -249,8 +293,7 @@ export default class Gantt extends Component<
       css: "gantt_container",
       cols: [
         {
-          width: 400,
-          min_width: 300,
+          width: Gantt.CHART_SIZE_MULTIPLIER,
           rows: [
             {
               view: "grid",
@@ -282,6 +325,26 @@ export default class Gantt extends Component<
         gantt.config.layout_full.cols[2],
         gantt.config.layout_full.cols[3],
       ],
+    };
+    
+    gantt.config.layout_chartonly = {      
+      css: "gantt_container",
+      cols: [
+        {
+          rows: [
+            {
+              view: "grid",
+              scrollX: "gridScroll",
+              scrollable: true,
+              scrollY: "scrollVer",
+            },
+
+            // horizontal scrollbar for the grid
+            { view: "scrollbar", id: "gridScroll", group: "horizontal" },
+          ],
+        },
+        { view: "scrollbar", id: "scrollVer" },
+      ]
     };
 
     gantt.config.layout = gantt.config.layout_full;
@@ -491,10 +554,14 @@ export default class Gantt extends Component<
             width={TextFieldWidth.standard}
           />
           <div className="flex-column padding-left-16">
-            <Button text="Show Chart" onClick={() => this.toggleGrid(true)} />
-          </div>
-          <div className="flex-column padding-left-4 gantt-buttons">
-            <Button text="Hide Chart" onClick={() => this.toggleGrid(false)} />
+            <Dropdown                
+                    ariaLabel="Chart Size"
+                    placeholder="Chart Size"
+                    className="chart-size"
+                    renderExpandable={props => <DropdownExpandableButton {...props} />}
+                    selection={this.chartSizeSelection}
+                    items={Gantt.CHART_SIZES}                    
+            />            
           </div>
           <div className="flex-column padding-left-16 gantt-buttons">
             <Button
