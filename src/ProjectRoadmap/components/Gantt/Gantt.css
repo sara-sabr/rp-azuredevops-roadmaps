@@ -9,6 +9,11 @@
     border-right: 1px solid #f2f2f2;
 }
 
+.chart-size {
+    border-right: 1px solid #f2f2f2;
+    width: 160px;
+}
+
 .gantt-buttons {
     border-right: 1px solid #f2f2f2;
     padding-right: 16px;
