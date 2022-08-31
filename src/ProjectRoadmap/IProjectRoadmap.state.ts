@@ -26,6 +26,11 @@ export interface IProjectRoadmap {
   asOf: Date | undefined;
 
   /**
+   * Query only work items that have been changed after this date.
+   */
+  modifiedAfter: Date | undefined;
+
+  /**
    * True if the roadmap for the project is properly configured.
    */
   isProperlyConfigured: boolean;
