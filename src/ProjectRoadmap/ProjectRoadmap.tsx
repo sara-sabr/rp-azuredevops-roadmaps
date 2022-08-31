@@ -14,7 +14,7 @@ import {
   HeaderTitleRow,
   TitleSize,
 } from "azure-devops-ui/Header";
-import { DropdownMultiSelection } from "azure-devops-ui/Utilities/DropdownSelection";
+import { DropdownMultiSelection, DropdownSelection } from "azure-devops-ui/Utilities/DropdownSelection";
 import { DropdownFilterBarItem } from "azure-devops-ui/Dropdown";
 import { FilterBar } from "azure-devops-ui/FilterBar";
 import {
@@ -51,6 +51,7 @@ import { ProjectRoadmapCommandMenu } from "./ProjectRoadmapCommandMenu.ui";
 import { ProjectRoadmapService } from "./ProjectRoadmap.service";
 import { WorkItemProcessService } from "@esdc-it-rp/azuredevops-common";
 import { ProjectRoadmapTaskEntity } from "./ProjectRoadmapTask.entity";
+import { ProjectRoadmapUtil } from "./ProjectRoadmap.util";
 
 /**
  * The status report page.
@@ -97,6 +98,11 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private static readonly FILTER_TAG_MODE_ALL_TOP = "filterTagAllTop";
 
   /**
+   * Filter key for fiscal.
+   */
+  private static readonly FILTER_KEY_FISCAL = "filterFiscal";
+
+  /**
    * Menu bar buttons.
    */
   private commandButtons: ProjectRoadmapCommandMenu;
@@ -105,6 +111,11 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    * Filter object for binding.
    */
   private filter: Filter = new Filter();
+
+  /**
+   * Filter for fiscal.
+   */
+   private filterFiscal = new DropdownSelection();
 
   /**
    * Filter for Area Path.
@@ -120,6 +131,11 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    * Filter for tag.
    */
   private filterTag = new DropdownMultiSelection();
+
+  /**
+   * The given filter needs a full re-query.
+   */
+  private filterRequiresFullQuery:boolean = false;
 
   /**
    * Filter for tag mode. Root or all.
@@ -166,12 +182,18 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
   private availableTags: string[] = [];
 
   /**
+   * Available Fiscals.
+   */
+  private availableFiscals: {id:string, text:string}[] = ProjectRoadmapUtil.getFiscalYearLists();
+
+  /**
    * Constructor
    *
    * @param props the properties
    */
   constructor(props: {} | Readonly<{}>) {
     super(props);
+
     this.pageData = {
       roadmap: [],
       ganttConfig: {
@@ -181,11 +203,12 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
           links: [],
         },
       },
+      modifiedAfter: ProjectRoadmapUtil.getPreviousFiscalYear(),
       isProperlyConfigured: true,
       asOf: undefined,
     };
     this.commandButtons = new ProjectRoadmapCommandMenu();
-
+    this.filterRequiresFullQuery = true;
     this.state = this.pageData;
     this.initEvents();
     this.setupFilter();
@@ -196,7 +219,7 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
    */
   private setupFilter(): void {
     var that = this;
-
+    
     that.filter.setFilterItemState(ProjectRoadmap.FILTER_KEY_AREAPATH, {
       value: [],
       operator: FilterOperatorType.and,
@@ -206,19 +229,52 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
       value: [],
     });
 
+    that.filter.setFilterItemState(ProjectRoadmap.FILTER_KEY_FISCAL, {
+      value: [that.availableFiscals[2].id]
+    })
+
     that.filter.subscribe(() => {
       that.filterRoadmap();
     }, FILTER_CHANGE_EVENT);
 
-    that.filterTagMode.subscribe(() => {
-      that.filterRoadmap();
+    that.filterTagMode.subscribe((source, event) => {      
+      if (event === "select" || event === "unselect") {
+        that.filterRoadmap();
+      }
+    });
+
+    that.filterFiscal.subscribe((source, event) => {      
+      if (source === undefined || source[0] === undefined) {
+        return;
+      }
+
+      var selectionIdx = source[0].beginIndex;
+
+      if (event === "select") {
+        that.filterRequiresFullQuery = true;
+        var selection = that.availableFiscals[selectionIdx];
+        if (selection.id === "Any") {
+          that.pageData.modifiedAfter = undefined;
+        } else {
+          that.pageData.modifiedAfter = new Date(selection.id);
+        }
+      }
     });
   }
 
   /**
    * Filter the roadmap.
    */
-  private filterRoadmap() {
+  private async filterRoadmap():Promise<void> {
+    if (this.filterRequiresFullQuery) {
+      this.pageData.roadmap = await ProjectRoadmapService.createGantt(
+        this.pageData.modifiedAfter,
+        // For future use to query historic roadmaps.
+        this.pageData.asOf
+      );
+      this.filterRequiresFullQuery = false;
+    }
+
     // Area Filtering
     const areaPaths: string[] = this.filter.getFilterItemState(
       ProjectRoadmap.FILTER_KEY_AREAPATH
@@ -420,11 +476,6 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
     this.refreshState();
 
     try {
-      this.pageData.roadmap = await ProjectRoadmapService.createGantt(
-        // For future use to query historic roadmaps.
-        this.pageData.asOf
-      );
-
       this.filterRoadmap();
     } catch (e) {
       this.pageData.isProperlyConfigured = false;
@@ -729,6 +780,14 @@ class ProjectRoadmap extends React.Component<{}, IProjectRoadmap> {
                     filterItemKey={ProjectRoadmap.FILTER_KEY_KEYWORD}
                     filter={this.filter}
                     placeholder="Filter by text contained in title (case-insensitive)"
+                  />
+                  <DropdownFilterBarItem
+                    showFilterBox={true}
+                    filterItemKey={ProjectRoadmap.FILTER_KEY_FISCAL}
+                    filter={this.filter}
+                    items={this.availableFiscals}
+                    selection={this.filterFiscal}
+                    placeholder="Modified After"                    
                   />
                   <DropdownFilterBarItem
                     showFilterBox={true}

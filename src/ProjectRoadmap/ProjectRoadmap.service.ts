@@ -22,20 +22,35 @@ import { BacklogEntity } from "./Backlog.entity";
 /**
  * Service for project roadmap.
  */
-export class ProjectRoadmapService {
+export class ProjectRoadmapService {  
+  
   /**
    * Get the latest project status.
    *
+   * @param modifiedAfter the date of items to get after this date
    * @param asOf the date or undefined to get latest.
    */
   static async getRoadmaps(
+    modifiedAfter?: Date,
     asOf?: Date
   ): Promise<SearchResultEntity<ProjectRoadmapTaskEntity, number>> {
+    const queryName = ProjectRoadmapConfig.getQueryForLatest();
+    const query = await SearchRepository.getQuery(queryName);
+    var wiql = query.wiql;
+
+    if (modifiedAfter) {
+      var orderByIdx = wiql.indexOf(" order by ");
+      var queryStatement = wiql.substring(0, orderByIdx);
+      // YYYY-MM-DD (Index 10 is right up to the date)
+      var date = modifiedAfter.toISOString().substring(0, 10);
+      wiql = queryStatement + " and Source.[System.ChangedDate] >= '";
+      wiql += date + "' "
+      wiql += query.wiql.substring(orderByIdx);
+    }    
+
     const roadmaps: SearchResultEntity<ProjectRoadmapTaskEntity, number> =
-      await SearchRepository.executeQuery(
-        ProjectRoadmapConfig.getQueryForLatest(),
-        ProjectRoadmapTaskEntity,
-        asOf
+      await SearchRepository.executeQueryWiql(wiql,
+        ProjectRoadmapTaskEntity
       );
 
     return roadmaps;
@@ -293,10 +308,11 @@ export class ProjectRoadmapService {
    * Create the gantt chart
    *
    * @param asOf date to pull data from or undefined for today.
+   * @param modifiedAfter date of when last change.
    * @returns the tasks for the gantt chart
    */
-  static async createGantt(asOf?: Date): Promise<ProjectRoadmapTaskEntity[]> {
-    const roadmapTree = await this.getRoadmaps(asOf);
+  static async createGantt(modifiedAfter?: Date, asOf?: Date): Promise<ProjectRoadmapTaskEntity[]> {
+    const roadmapTree = await this.getRoadmaps(modifiedAfter, asOf);
     const projectRoadmaps: ProjectRoadmapTaskEntity[] = [];
     const stack: ProjectRoadmapTaskEntity[] = [];
     let currentData: ProjectRoadmapTaskEntity | undefined;
