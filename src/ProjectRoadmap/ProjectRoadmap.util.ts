@@ -62,9 +62,6 @@ export class ProjectRoadmapUtil {
   static getFiscalYearLists(): { id: string; text: string }[] {
     if (this.fiscalYears.length === 0) {
       this.fiscalYears = [{ id: "Any", text: "Changed After: Any" }];
-      this.fiscalYears = [
-        { id: "2022-08-30", text: "Changed After: 2022-08-30" },
-      ];
       var fiscalYear: Date = this.getFiscalYear();
       for (var i = 0; i < 5; i++) {
         this.fiscalYears.push({
