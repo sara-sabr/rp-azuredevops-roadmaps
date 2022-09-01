@@ -8,7 +8,7 @@ import { Component } from "react";
 
 // Azure Library
 import { Button } from "azure-devops-ui/Button";
-import { Dropdown, DropdownExpandableButton  } from "azure-devops-ui/Dropdown";
+import { Dropdown, DropdownExpandableButton } from "azure-devops-ui/Dropdown";
 import { DropdownSelection } from "azure-devops-ui/Utilities/DropdownSelection";
 import { TextField, TextFieldWidth } from "azure-devops-ui/TextField";
 
@@ -54,7 +54,7 @@ export default class Gantt extends Component<
     { id: "chart-400", text: "Chart 1x width", data: 1 },
     { id: "chart-800", text: "Chart 2x width", data: 2 },
     { id: "chart-1200", text: "Chart 3x width", data: 3 },
-    { id: "chart-max", text: "Chart Full width", data: 100 }
+    { id: "chart-max", text: "Chart Full width", data: 100 },
   ];
 
   /** Multiplier factor for size */
@@ -105,22 +105,22 @@ export default class Gantt extends Component<
 
   /**
    * Change the grid size.
-   * 
+   *
    * @param selectionArray the selected index.
    */
   private changeGridSize(selectionArray: any) {
     const selectedIndex = selectionArray[0].beginIndex;
     const selection = Gantt.CHART_SIZES[selectedIndex];
     if (this.ganttContainer) {
-      
       if (selection.data === 0) {
         gantt.config.layout = gantt.config.layout_ganttonly;
-      } else if (selection.data === 100) {        
-        gantt.config.layout = gantt.config.layout_chartonly;        
+      } else if (selection.data === 100) {
+        gantt.config.layout = gantt.config.layout_chartonly;
         gantt.config.columns[1].width = "*";
       } else {
         gantt.config.layout = gantt.config.layout_full;
-        gantt.config.layout.cols[0].width = selection.data * Gantt.CHART_SIZE_MULTIPLIER;
+        gantt.config.layout.cols[0].width =
+          selection.data * Gantt.CHART_SIZE_MULTIPLIER;
         gantt.config.columns[1].width = "*";
       }
       gantt.init(this.ganttContainer);
@@ -326,8 +326,8 @@ export default class Gantt extends Component<
         gantt.config.layout_full.cols[3],
       ],
     };
-    
-    gantt.config.layout_chartonly = {      
+
+    gantt.config.layout_chartonly = {
       css: "gantt_container",
       cols: [
         {
@@ -344,7 +344,7 @@ export default class Gantt extends Component<
           ],
         },
         { view: "scrollbar", id: "scrollVer" },
-      ]
+      ],
     };
 
     gantt.config.layout = gantt.config.layout_full;
@@ -554,14 +554,16 @@ export default class Gantt extends Component<
             width={TextFieldWidth.standard}
           />
           <div className="flex-column padding-left-16">
-            <Dropdown                
-                    ariaLabel="Chart Size"
-                    placeholder="Chart Size"
-                    className="chart-size"
-                    renderExpandable={props => <DropdownExpandableButton {...props} />}
-                    selection={this.chartSizeSelection}
-                    items={Gantt.CHART_SIZES}                    
-            />            
+            <Dropdown
+              ariaLabel="Chart Size"
+              placeholder="Chart Size"
+              className="chart-size"
+              renderExpandable={(props) => (
+                <DropdownExpandableButton {...props} />
+              )}
+              selection={this.chartSizeSelection}
+              items={Gantt.CHART_SIZES}
+            />
           </div>
           <div className="flex-column padding-left-16 gantt-buttons">
             <Button

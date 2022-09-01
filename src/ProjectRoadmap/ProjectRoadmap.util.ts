@@ -2,8 +2,10 @@
  * Project roadmap utilities.
  */
 export class ProjectRoadmapUtil {
-
-  static fiscalYears:{id: string, text: string}[] = [];
+  /**
+   * Available fiscal year cache.
+   */
+  static fiscalYears: { id: string; text: string }[] = [];
 
   /**
    * Get the date for the beginning of the month.
@@ -20,7 +22,7 @@ export class ProjectRoadmapUtil {
    *
    * @return the previous fiscal year.
    */
-   static getPreviousFiscalYear(): Date {
+  static getPreviousFiscalYear(): Date {
     const date = this.getFiscalYear();
     date.setFullYear(date.getFullYear() - 1);
     return date;
@@ -31,11 +33,11 @@ export class ProjectRoadmapUtil {
    *
    * @return the previous fiscal year.
    */
-   static getFiscalYear(): Date {
+  static getFiscalYear(): Date {
     const date = this.getDateBeginningOfMonth();
     if (date.getMonth() < 3) {
       date.setFullYear(date.getFullYear() - 1);
-    } 
+    }
     date.setMonth(3);
 
     return date;
@@ -54,30 +56,35 @@ export class ProjectRoadmapUtil {
 
   /**
    * Get the fiscal year
-   * 
+   *
    * @returns the current fiscal year
    */
-  static getFiscalYearLists(): {id:string, text:string}[] {
+  static getFiscalYearLists(): { id: string; text: string }[] {
     if (this.fiscalYears.length === 0) {
-
-      this.fiscalYears = [{id:"Any", text:"Changed After: Any"}];
-      var fiscalYear:Date = this.getFiscalYear();
+      this.fiscalYears = [{ id: "Any", text: "Changed After: Any" }];
+      this.fiscalYears = [
+        { id: "2022-08-30", text: "Changed After: 2022-08-30" },
+      ];
+      var fiscalYear: Date = this.getFiscalYear();
       for (var i = 0; i < 5; i++) {
-        this.fiscalYears.push({id:this.getDateOnly(fiscalYear), text: "Changed After: " + this.getDateOnly(fiscalYear)});
+        this.fiscalYears.push({
+          id: this.getDateOnly(fiscalYear),
+          text: "Changed After: " + this.getDateOnly(fiscalYear),
+        });
         fiscalYear.setFullYear(fiscalYear.getFullYear() - 1);
       }
     }
 
-    return this.fiscalYears;      
+    return this.fiscalYears;
   }
 
   /**
    * Get just the date part of the date object which includes time.
-   * 
+   *
    * @param date the date
    * @returns returns just the YYYY-MM-DD
    */
-  static getDateOnly(date: Date):string {
+  static getDateOnly(date: Date): string {
     return date.toISOString().substring(0, 10);
   }
 

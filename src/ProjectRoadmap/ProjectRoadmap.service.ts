@@ -22,8 +22,7 @@ import { BacklogEntity } from "./Backlog.entity";
 /**
  * Service for project roadmap.
  */
-export class ProjectRoadmapService {  
-  
+export class ProjectRoadmapService {
   /**
    * Get the latest project status.
    *
@@ -44,14 +43,12 @@ export class ProjectRoadmapService {
       // YYYY-MM-DD (Index 10 is right up to the date)
       var date = modifiedAfter.toISOString().substring(0, 10);
       wiql = queryStatement + " and Source.[System.ChangedDate] >= '";
-      wiql += date + "' "
+      wiql += date + "' ";
       wiql += query.wiql.substring(orderByIdx);
-    }    
+    }
 
     const roadmaps: SearchResultEntity<ProjectRoadmapTaskEntity, number> =
-      await SearchRepository.executeQueryWiql(wiql,
-        ProjectRoadmapTaskEntity
-      );
+      await SearchRepository.executeQueryWiql(wiql, ProjectRoadmapTaskEntity);
 
     return roadmaps;
   }
@@ -311,7 +308,10 @@ export class ProjectRoadmapService {
    * @param modifiedAfter date of when last change.
    * @returns the tasks for the gantt chart
    */
-  static async createGantt(modifiedAfter?: Date, asOf?: Date): Promise<ProjectRoadmapTaskEntity[]> {
+  static async createGantt(
+    modifiedAfter?: Date,
+    asOf?: Date
+  ): Promise<ProjectRoadmapTaskEntity[]> {
     const roadmapTree = await this.getRoadmaps(modifiedAfter, asOf);
     const projectRoadmaps: ProjectRoadmapTaskEntity[] = [];
     const stack: ProjectRoadmapTaskEntity[] = [];
