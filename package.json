@@ -24,7 +24,7 @@
     "azure-devops-extension-api": "^1.158.0",
     "azure-devops-extension-sdk": "^2.0.11",
     "azure-devops-ui": "^2.167.44",
-    "dhtmlx-gantt": "^7.1.12",
+    "dhtmlx-gantt": "^7.1.13",
     "tinycolor2": "^1.4.2"
   },
   "devDependencies": {
