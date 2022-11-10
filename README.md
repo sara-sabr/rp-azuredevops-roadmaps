@@ -27,6 +27,8 @@ This Azure Boards extension provides roadmap capability for Epic > Feature > PBI
 
 ## Developer Instructions
 
+These instructions only apply if you want to modify the extension.
+
 Download and install the following tools
 
 1. [Visual Studio Code](https://code.visualstudio.com/download)
