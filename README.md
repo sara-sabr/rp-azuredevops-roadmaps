@@ -1,7 +1,7 @@
 # Azure DevOps Extension - Boards - IT Research and Prototyping Roadmaps
 
 [![Development](https://github.com/sara-sabr/rp-azuredevops-roadmaps/actions/workflows/development.yml/badge.svg)](https://github.com/sara-sabr/rp-azuredevops-roadmaps/actions/workflows/development.yml)
-[![Production](https://github.com/sara-sabr/rp-azuredevops-roadmapsactions/workflows/production.yml/badge.svg)](https://github.com/sara-sabr/rp-azuredevops-roadmaps/actions/workflows/production.yml)
+[![Production](https://github.com/sara-sabr/rp-azuredevops-roadmaps/actions/workflows/production.yml/badge.svg?branch=main)](https://github.com/sara-sabr/rp-azuredevops-roadmaps/actions/workflows/production.yml)
 
 This Azure Boards extension provides roadmap capability for Epic > Feature > PBI.
 
@@ -25,7 +25,9 @@ This Azure Boards extension provides roadmap capability for Epic > Feature > PBI
    - Click on Column Options and for Sorting, choose the following:
        - Backlog Priority
 
-## Developer Prerequisites
+## Developer Instructions
+
+These instructions only apply if you want to modify the extension.
 
 Download and install the following tools
 

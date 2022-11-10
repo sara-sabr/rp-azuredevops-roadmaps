@@ -66,3 +66,7 @@ div.gantt-qi-description {
 .gantt_cal_qi_tcontent {
     white-space: pre-wrap;
 }
+
+.gantt_row.odd, .gantt_task_row.odd{
+    background: #FCFCFC;
+}
